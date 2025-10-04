@@ -149,65 +149,401 @@ spring.jpa.properties.hibernate.format_sql=true
 
 ✅ If you see **“Student API working fine!”**, setup is successful! 🚀
 
-## Application Flow:
-### End-to-End Flow
-1. User sends GET request → http://localhost:8080/hello-student.
-2. Spring routes it to StudentController.helloStudent().
-3. Controller delegates to StudentServiceImpl.getHelloMessage().
-4. Service asks StudentRepository.getMessage().
-5. Repository returns "Student API working fine!".
-6. Response goes back → Browser/Postman shows: "Student API working fine!"
+# PostgreSQL Commands & Troubleshooting for Student API
 
-### ✅ This is textbook Layered Architecture:
-1. Controller = Request handling (Web Layer).
-2. Service = Business logic (Service Layer).
-3. Repository = Database access (Data Layer).
-4. Entity = Data model (Persistence Layer).
-5. Exception = Error handling.
+This document provides useful **psql commands**, explains common issues, and details how to fix database permission errors when working with **Spring Boot + PostgreSQL**.
 
-## Each File Type Role:
-### Controller = Handles HTTP requests & responses only. Doesn’t contain business logic:
-1. **@RestController:** Marks this class as a REST API controller → methods return JSON/text directly as HTTP responses.
-2. **Dependency injection:**
+---
+
+## Common psql Commands
+
+```sql
+\c                -- connect to database
+\d                -- describe tables
+
+\c studentdb;     -- switch to your DB
+\d;               -- list all tables
+\d students       -- show table schema
 ```
-// Constructor Injection
-public  StudentController(StudentService studentService) {
-this.studentService = studentService;
+
+---
+
+## Connecting to PostgreSQL (SQL Shell)
+
+When you start **SQL Shell (psql)**, you’ll see prompts:
+
+```
+Server [localhost]:
+Database [postgres]:
+Port [5432]:
+Username [postgres]: postgres
+Password for user postgres: ******
+```
+
+✅ What to do:
+
+1. Start SQL Shell (psql).
+2. At prompts, hit **Enter** for defaults (unless changed):
+
+    * Server [localhost]: **Enter**
+    * Database [postgres]: **Enter**
+    * Port [5432]: **Enter**
+    * Username [postgres]: **postgres** (or your DB username)
+    * Password: enter your PostgreSQL password
+
+Now you’re connected to the default database.
+
+---
+
+## Switching Database
+
+To switch to your project DB:
+
+```sql
+\c studentdb;
+```
+
+Output:
+
+```
+You are now connected to database "studentdb" as user "postgres".
+studentdb=#
+```
+
+---
+
+## Checking Tables
+
+```sql
+\d;          -- list all tables
+\d students  -- describe students table
+```
+
+If you see:
+
+```
+ERROR: relation "students" does not exist
+```
+
+👉 It means the table hasn’t been created yet.
+
+---
+
+## Fix: Create Table
+
+If Hibernate didn’t auto-create the table, create manually:
+
+```sql
+CREATE TABLE students (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(150) NOT NULL
+);
+```
+
+Verify:
+
+```sql
+\d students;
+```
+
+---
+
+## Permission Errors
+
+If you see:
+
+```
+ERROR: permission denied for table students
+```
+
+👉 The user your Spring Boot app uses doesn’t have INSERT privileges.
+
+### Check `application.properties`
+
+```properties
+spring.datasource.username=postgres
+spring.datasource.password=yourpassword
+```
+
+### Grant Permissions
+
+```sql
+\c studentdb;
+GRANT ALL PRIVILEGES ON TABLE students TO postgres;
+GRANT USAGE, SELECT, UPDATE, INSERT, DELETE ON SEQUENCE students_id_seq TO postgres;
+```
+
+If your app uses a custom user (e.g. `srimansagar`):
+
+```sql
+GRANT ALL PRIVILEGES ON TABLE students TO srimansagar;
+GRANT USAGE, SELECT, UPDATE, INSERT, DELETE ON SEQUENCE students_id_seq TO srimansagar;
+```
+
+Verify:
+
+```sql
+\z students
+```
+
+---
+
+## Root Cause: User Ownership
+
+* You created the table `students` as **postgres** superuser.
+* But Spring Boot app connects as **srimansagar**.
+* Default privileges only apply to future tables, not existing ones.
+* So `srimansagar` cannot insert into `students`.
+
+---
+
+## Fix for Existing Tables
+
+1. Exit SQL shell and reopen.
+2. Grant privileges explicitly:
+
+```sql
+\c studentdb;
+
+-- Grant rights on table
+GRANT ALL PRIVILEGES ON TABLE students TO srimansagar;
+
+-- Grant rights on sequence (for auto-increment ID)
+GRANT ALL PRIVILEGES ON SEQUENCE students_id_seq TO srimansagar;
+```
+
+3. Verify:
+
+```sql
+\z students
+```
+
+---
+
+## Best Practice
+
+* Always connect as the **application user** (`srimansagar`) before creating tables.
+* This ensures the user owns the tables → no need for extra grants.
+
+---
+
+## Test with Spring Boot
+
+Restart your Spring Boot app and test API:
+
+```http
+POST http://localhost:8080/students
+{
+  "name": "Robert",
+  "email": "robert@example.com"
 }
 ```
 
-This is called constructor injection → safe, testable, and recommended.
-3. **@GetMapping("/hello-student"):**
-    - When you hit http://localhost:8080/hello-student, this method runs.
-    - It delegates the actual logic to the service layer (studentService.getHelloMessage()).
+✅ If insert succeeds, database + permissions are correctly configured.
 
-### Entity = data structure that represents a DB table row:
-1. fields like id, name, email, course with JPA annotations (@Entity, @Id, @GeneratedValue).
-2. Entities map to database tables in Spring Data JPA.
+# 📘 Student API – CRUD Endpoints
 
-### Exception = Helps return clear error messages (e.g., HTTP 404):
-1. Typically used when a student isn’t found in DB.
-2. you’ll make it extend RuntimeException and use it in service/repository layer.
+## 🔹 Endpoints Overview
 
-### Repository = communicates with the database:
-1. **@Repository:** Marks it as a persistence/data layer class. Spring manages it as a bean.
-2. it will extend JpaRepository<Student, Long>, giving you full CRUD methods (save, findById, findAll, deleteById).
+### Health Check
 
-### Service interface = Business logic contract:
-1. Declares what services should provide (a contract).
-2. **Why interface?** → Helps in loose coupling. You can swap implementations (mock service for testing, real one for prod).
-3. Later: will grow with methods like createStudent, getStudentById, updateStudent, deleteStudent.
+* **Endpoint:** `/hello-student`
+* **HTTP Method:** `GET`
+* **Description:** Health check / Welcome API
+* **Sample Request Body:** -
+* **Sample Response:**
 
-### Service implementation = Business logic + Orchestration (calls repositories, applies rules, processes data):
-1. **@Service:** Marks this as a business/service layer bean.
-2. Implements the StudentService interface.
-3. Uses StudentRepository (injected via constructor) to fetch data.
+```json
+"Student API working fine!"
+```
 
-**Delegation flow:**
-**Controller → Service → Repository → return value.** 
+---
 
-**Example:**
-1. **Controller**(StudentController): Controller required service.
-2. **Service**(StudentService(interface) and StudentServiceImpl(Business logic and Orchestration)
-3. **Repository**(StudentRepository): communicates with database.
-4. **return value**(return messages)
+### Create Student
+
+* **Endpoint:** `/students`
+* **HTTP Method:** `POST`
+* **Description:** Create a new student
+* **Sample Request Body:**
+
+```json
+{
+  "name": "John Doe",
+  "email": "john@example.com"
+}
+```
+
+* **Sample Response:**
+
+```json
+{
+  "id": 1,
+  "name": "John Doe",
+  "email": "john@example.com"
+}
+```
+
+---
+
+### Get All Students
+
+* **Endpoint:** `/students`
+* **HTTP Method:** `GET`
+* **Description:** Retrieve all students
+* **Sample Request Body:** -
+* **Sample Response:**
+
+```json
+[
+  { "id": 1, "name": "John Doe", "email": "john@example.com" }
+]
+```
+
+---
+
+### Update Student by ID
+
+* **Endpoint:** `/students/{id}`
+* **HTTP Method:** `PUT`
+* **Description:** Update student by ID
+* **Sample Request Body:**
+
+```json
+{
+  "name": "Updated Name",
+  "email": "updated@example.com"
+}
+```
+
+* **Sample Response:**
+
+```json
+{
+  "id": 1,
+  "name": "Updated Name",
+  "email": "updated@example.com"
+}
+```
+
+---
+
+### Delete Student by ID
+
+* **Endpoint:** `/students/{id}`
+* **HTTP Method:** `DELETE`
+* **Description:** Delete student by ID
+* **Sample Request Body:** -
+* **Sample Response (Success):**
+
+```
+204 No Content
+```
+
+* **Sample Response (Not Found):**
+
+```json
+{
+  "status": 404,
+  "error": "Not Found",
+  "message": "Student not found with id 99"
+}
+```
+
+---
+
+## 🔹 Example Workflows
+
+### ✅ Create Student (POST)
+
+```http
+POST /students
+Content-Type: application/json
+
+{
+  "name": "Alice",
+  "email": "alice@example.com"
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": 2,
+  "name": "Alice",
+  "email": "alice@example.com"
+}
+```
+
+---
+
+### ✅ Get All Students (GET)
+
+```http
+GET /students
+```
+
+**Response:**
+
+```json
+[
+  { "id": 1, "name": "John Doe", "email": "john@example.com" },
+  { "id": 2, "name": "Alice", "email": "alice@example.com" }
+]
+```
+
+---
+
+### ✅ Update Student (PUT)
+
+```http
+PUT /students/2
+Content-Type: application/json
+
+{
+  "name": "Alice Updated",
+  "email": "alice.updated@example.com"
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": 2,
+  "name": "Alice Updated",
+  "email": "alice.updated@example.com"
+}
+```
+
+---
+
+### ✅ Delete Student (DELETE)
+
+```http
+DELETE /students/2
+```
+
+**Response (Success):**
+
+```
+HTTP 204 No Content
+```
+
+**Response (Not Found):**
+
+```json
+{
+  "timestamp": "2025-10-04T15:00:00",
+  "status": 404,
+  "error": "Not Found",
+  "message": "Student not found with id 99",
+  "path": "/students/99"
+}
+```
+
+---
+
+✅ This README.md serves as both **API documentation** and a **Postman reference**.
+
