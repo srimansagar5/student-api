@@ -44,4 +44,13 @@ public class StudentServiceImpl implements StudentService {
         //Save updated student
         return studentRepository.save(student);
     }
+
+    @Override
+    public void deleteStudent(Long id) {
+        // Find existing student
+        Student student = studentRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Student not found with id " + id));
+
+        studentRepository.deleteById(id);
+    }
 }
