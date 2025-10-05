@@ -149,6 +149,628 @@ spring.jpa.properties.hibernate.format_sql=true
 
 ✅ If you see **“Student API working fine!”**, setup is successful! 🚀
 
+
+PostgreSQL Commands & Troubleshooting for Student API
+This document provides useful psql commands, explains common issues, and details how to fix database permission errors when working with Spring Boot + PostgreSQL.
+
+Common psql Commands
+\c                -- connect to database
+\d                -- describe tables
+
+\c studentdb;     -- switch to your DB
+\d;               -- list all tables
+\d students       -- show table schema
+Connecting to PostgreSQL (SQL Shell)
+When you start SQL Shell (psql), you’ll see prompts:
+
+Server [localhost]:
+Database [postgres]:
+Port [5432]:
+Username [postgres]: postgres
+Password for user postgres: ******
+✅ What to do:
+
+Start SQL Shell (psql).
+
+At prompts, hit Enter for defaults (unless changed):
+
+Server [localhost]: Enter
+Database [postgres]: Enter
+Port [5432]: Enter
+Username [postgres]: postgres (or your DB username)
+Password: enter your PostgreSQL password
+Now you’re connected to the default database.
+
+Switching Database
+To switch to your project DB:
+
+\c studentdb;
+Output:
+
+You are now connected to database "studentdb" as user "postgres".
+studentdb=#
+Checking Tables
+\d;          -- list all tables
+\d students  -- describe students table
+If you see:
+
+ERROR: relation "students" does not exist
+👉 It means the table hasn’t been created yet.
+
+Fix: Create Table
+If Hibernate didn’t auto-create the table, create manually:
+
+CREATE TABLE students (
+id SERIAL PRIMARY KEY,
+name VARCHAR(100) NOT NULL,
+email VARCHAR(150) NOT NULL
+);
+Verify:
+
+\d students;
+Permission Errors
+If you see:
+
+ERROR: permission denied for table students
+👉 The user your Spring Boot app uses doesn’t have INSERT privileges.
+
+Check application.properties
+spring.datasource.username=postgres
+spring.datasource.password=yourpassword
+Grant Permissions
+\c studentdb;
+GRANT ALL PRIVILEGES ON TABLE students TO postgres;
+GRANT USAGE, SELECT, UPDATE, INSERT, DELETE ON SEQUENCE students_id_seq TO postgres;
+If your app uses a custom user (e.g. srimansagar):
+
+GRANT ALL PRIVILEGES ON TABLE students TO srimansagar;
+GRANT USAGE, SELECT, UPDATE, INSERT, DELETE ON SEQUENCE students_id_seq TO srimansagar;
+Verify:
+
+\z students
+Root Cause: User Ownership
+You created the table students as postgres superuser.
+But Spring Boot app connects as srimansagar.
+Default privileges only apply to future tables, not existing ones.
+So srimansagar cannot insert into students.
+Fix for Existing Tables
+Exit SQL shell and reopen.
+Grant privileges explicitly:
+\c studentdb;
+
+-- Grant rights on table
+GRANT ALL PRIVILEGES ON TABLE students TO srimansagar;
+
+-- Grant rights on sequence (for auto-increment ID)
+GRANT ALL PRIVILEGES ON SEQUENCE students_id_seq TO srimansagar;
+Verify:
+\z students
+Best Practice
+Always connect as the application user (srimansagar) before creating tables.
+This ensures the user owns the tables → no need for extra grants.
+Test with Spring Boot
+Restart your Spring Boot app and test API:
+
+POST http://localhost:8080/students
+{
+"name": "Robert",
+"email": "robert@example.com"
+}
+✅ If insert succeeds, database + permissions are correctly configured.
+
+📘 Student API – CRUD Endpoints
+🔹 Endpoints Overview
+Health Check
+Endpoint: /hello-student
+HTTP Method: GET
+Description: Health check / Welcome API
+Sample Request Body: -
+Sample Response:
+"Student API working fine!"
+Create Student
+Endpoint: /students
+HTTP Method: POST
+Description: Create a new student
+Sample Request Body:
+{
+"name": "John Doe",
+"email": "john@example.com"
+}
+Sample Response:
+{
+"id": 1,
+"name": "John Doe",
+"email": "john@example.com"
+}
+Get All Students
+Endpoint: /students
+HTTP Method: GET
+Description: Retrieve all students
+Sample Request Body: -
+Sample Response:
+[
+{ "id": 1, "name": "John Doe", "email": "john@example.com" }
+]
+Update Student by ID
+Endpoint: /students/{id}
+HTTP Method: PUT
+Description: Update student by ID
+Sample Request Body:
+{
+"name": "Updated Name",
+"email": "updated@example.com"
+}
+Sample Response:
+{
+"id": 1,
+"name": "Updated Name",
+"email": "updated@example.com"
+}
+Delete Student by ID
+Endpoint: /students/{id}
+HTTP Method: DELETE
+Description: Delete student by ID
+Sample Request Body: -
+Sample Response (Success):
+204 No Content
+Sample Response (Not Found):
+{
+"status": 404,
+"error": "Not Found",
+"message": "Student not found with id 99"
+}
+🔹 Example Workflows
+✅ Create Student (POST)
+POST /students
+Content-Type: application/json
+
+{
+"name": "Alice",
+"email": "alice@example.com"
+}
+Response:
+
+{
+"id": 2,
+"name": "Alice",
+"email": "alice@example.com"
+}
+✅ Get All Students (GET)
+GET /students
+Response:
+
+[
+{ "id": 1, "name": "John Doe", "email": "john@example.com" },
+{ "id": 2, "name": "Alice", "email": "alice@example.com" }
+]
+✅ Update Student (PUT)
+PUT /students/2
+Content-Type: application/json
+
+{
+"name": "Alice Updated",
+"email": "alice.updated@example.com"
+}
+Response:
+
+{
+"id": 2,
+"name": "Alice Updated",
+"email": "alice.updated@example.com"
+}
+✅ Delete Student (DELETE)
+DELETE /students/2
+Response (Success):
+
+HTTP 204 No Content
+Response (Not Found):
+
+{
+"timestamp": "2025-10-04T15:00:00",
+"status": 404,
+"error": "Not Found",
+"message": "Student not found with id 99",
+"path": "/students/99"
+}
+✅ This README.md serves as both API documentation and a Postman reference.
+
+# PostgreSQL Commands & Troubleshooting for Student API
+
+This document provides useful **psql commands**, explains common database issues, and details how to fix permission errors when working with **Spring Boot + PostgreSQL**.
+
+---
+
+## 🧩 Common psql Commands
+
+```sql
+\c                -- connect to database
+\d                -- describe tables
+
+\c studentdb;     -- switch to your DB
+\d;               -- list all tables
+\d students       -- show table schema
+```
+
+---
+
+## ⚙️ Connecting to PostgreSQL (SQL Shell)
+
+When you start **SQL Shell (psql)**, you’ll see prompts:
+
+```
+Server [localhost]:
+Database [postgres]:
+Port [5432]:
+Username [postgres]: postgres
+Password for user postgres: ******
+```
+
+✅ **What to do:**
+
+1. Start SQL Shell (psql).
+2. At prompts, hit **Enter** for defaults (unless changed):
+
+    * Server [localhost]: Enter
+    * Database [postgres]: Enter
+    * Port [5432]: Enter
+    * Username [postgres]: postgres (or your DB username)
+    * Password: enter your PostgreSQL password
+
+You’ll now be connected to the default database.
+
+---
+
+## 🔄 Switching Database
+
+```sql
+\c studentdb;
+```
+
+Output:
+
+```
+You are now connected to database "studentdb" as user "postgres".
+studentdb=#
+```
+
+---
+
+## 📋 Checking Tables
+
+```sql
+\d;          -- list all tables
+\d students  -- describe students table
+```
+
+If you see:
+
+```
+ERROR: relation "students" does not exist
+```
+
+👉 It means the table hasn’t been created yet.
+
+---
+
+## 🧱 Fix: Create Table
+
+If Hibernate didn’t auto-create the table, create it manually:
+
+```sql
+CREATE TABLE students (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(150) NOT NULL
+);
+```
+
+Verify:
+
+```sql
+\d students;
+```
+
+---
+
+## 🚫 Permission Errors
+
+If you see:
+
+```
+ERROR: permission denied for table students
+```
+
+👉 The user your Spring Boot app uses doesn’t have INSERT privileges.
+
+### Check `application.properties`
+
+```properties
+spring.datasource.username=postgres
+spring.datasource.password=yourpassword
+```
+
+### Grant Permissions
+
+```sql
+\c studentdb;
+GRANT ALL PRIVILEGES ON TABLE students TO postgres;
+GRANT USAGE, SELECT, UPDATE, INSERT, DELETE ON SEQUENCE students_id_seq TO postgres;
+```
+
+If your app uses a custom user (e.g. `srimansagar`):
+
+```sql
+GRANT ALL PRIVILEGES ON TABLE students TO srimansagar;
+GRANT USAGE, SELECT, UPDATE, INSERT, DELETE ON SEQUENCE students_id_seq TO srimansagar;
+```
+
+Verify:
+
+```sql
+\z students
+```
+
+---
+
+## ⚠️ Root Cause: User Ownership
+
+* You created the table `students` as **postgres superuser**.
+* Spring Boot connects as **srimansagar**.
+* Default privileges only apply to future tables, not existing ones.
+* Therefore, `srimansagar` cannot insert into `students`.
+
+---
+
+## 🔧 Fix for Existing Tables
+
+1. Exit SQL shell and reopen.
+2. Grant privileges explicitly:
+
+```sql
+\c studentdb;
+
+-- Grant rights on table
+GRANT ALL PRIVILEGES ON TABLE students TO srimansagar;
+
+-- Grant rights on the sequence (auto-increment ID)
+GRANT ALL PRIVILEGES ON SEQUENCE students_id_seq TO srimansagar;
+```
+
+3. Verify:
+
+```sql
+\z students
+```
+
+---
+
+## 💡 Best Practice
+
+Always connect as the **application user (srimansagar)** before creating tables.
+That way, the user automatically owns the tables → no manual grants required.
+
+---
+
+## 🧪 Test with Spring Boot
+
+Restart your Spring Boot app and test API:
+
+```http
+POST http://localhost:8080/students
+{
+  "name": "Robert",
+  "email": "robert@example.com"
+}
+```
+
+✅ If insert succeeds, database + permissions are correctly configured.
+
+---
+
+# 📘 Student API – CRUD Endpoints
+
+## 🔹 Endpoints Overview
+
+### 🩺 Health Check
+
+**Endpoint:** `/hello-student`
+**Method:** `GET`
+**Description:** Health check / Welcome API
+**Response:**
+
+```json
+"Student API working fine!"
+```
+
+---
+
+### ➕ Create Student
+
+**Endpoint:** `/students`
+**Method:** `POST`
+**Description:** Create a new student
+**Request Body:**
+
+```json
+{
+  "name": "John Doe",
+  "email": "john@example.com"
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": 1,
+  "name": "John Doe",
+  "email": "john@example.com"
+}
+```
+
+---
+
+### 📚 Get All Students
+
+**Endpoint:** `/students`
+**Method:** `GET`
+**Description:** Retrieve all students
+**Response:**
+
+```json
+[
+  { "id": 1, "name": "John Doe", "email": "john@example.com" }
+]
+```
+
+---
+
+### ✏️ Update Student by ID
+
+**Endpoint:** `/students/{id}`
+**Method:** `PUT`
+**Description:** Update student by ID
+**Request Body:**
+
+```json
+{
+  "name": "Updated Name",
+  "email": "updated@example.com"
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": 1,
+  "name": "Updated Name",
+  "email": "updated@example.com"
+}
+```
+
+---
+
+### ❌ Delete Student by ID
+
+**Endpoint:** `/students/{id}`
+**Method:** `DELETE`
+**Description:** Delete student by ID
+**Response (Success):**
+
+```
+204 No Content
+```
+
+**Response (Not Found):**
+
+```json
+{
+  "status": 404,
+  "error": "Not Found",
+  "message": "Student not found with id 99"
+}
+```
+
+---
+
+## 🔹 Example Workflows
+
+### ✅ Create Student (POST)
+
+```http
+POST /students
+Content-Type: application/json
+
+{
+  "name": "Alice",
+  "email": "alice@example.com"
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": 2,
+  "name": "Alice",
+  "email": "alice@example.com"
+}
+```
+
+---
+
+### ✅ Get All Students (GET)
+
+```http
+GET /students
+```
+
+**Response:**
+
+```json
+[
+  { "id": 1, "name": "John Doe", "email": "john@example.com" },
+  { "id": 2, "name": "Alice", "email": "alice@example.com" }
+]
+```
+
+---
+
+### ✅ Update Student (PUT)
+
+```http
+PUT /students/2
+Content-Type: application/json
+
+{
+  "name": "Alice Updated",
+  "email": "alice.updated@example.com"
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": 2,
+  "name": "Alice Updated",
+  "email": "alice.updated@example.com"
+}
+```
+
+---
+
+### ✅ Delete Student (DELETE)
+
+```http
+DELETE /students/2
+```
+
+**Response (Success):**
+
+```
+HTTP 204 No Content
+```
+
+**Response (Not Found):**
+
+```json
+{
+  "timestamp": "2025-10-04T15:00:00",
+  "status": 404,
+  "error": "Not Found",
+  "message": "Student not found with id 99",
+  "path": "/students/99"
+}
+```
+
+---
+
+✅ This README.md serves as both **API documentation** and a **Postman reference** for your Student CRUD API.
+
+
+
 # PostgreSQL – Fixing Permission Denied for Schema Public
 
 This guide explains how to fix the common PostgreSQL error:
