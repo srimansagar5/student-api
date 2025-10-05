@@ -149,3 +149,255 @@ spring.jpa.properties.hibernate.format_sql=true
 
 ✅ If you see **“Student API working fine!”**, setup is successful! 🚀
 
+# PostgreSQL – Fixing Permission Denied for Schema Public
+
+This guide explains how to fix the common PostgreSQL error:
+
+```
+ERROR: permission denied for schema public
+```
+
+which occurs when creating tables using a non-superuser (e.g., `srimansagar`).
+
+---
+
+## Connecting to PostgreSQL (SQL Shell)
+
+1. Open **SQL Shell (psql)**
+
+```
+Server [localhost]:
+Database [postgres]:
+Port [5432]:
+Username [postgres]: srimansagar
+Password for user srimansagar:
+```
+
+---
+
+## Switching Database
+
+```sql
+postgres=> \c studentdb;
+```
+
+Output:
+
+```
+You are now connected to database "studentdb" as user "srimansagar".
+```
+
+---
+
+## Attempt to Create Table
+
+```sql
+studentdb=> CREATE TABLE faculty(
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(150) NOT NULL,
+    department VARCHAR(100) NOT NULL
+);
+```
+
+If you get:
+
+```
+ERROR: permission denied for schema public
+```
+
+---
+
+## 🧠 Root Cause
+
+* The **database `studentdb`** was created by the **postgres superuser**.
+* The user **srimansagar** is connected but does **not have permission** to create objects in the **public schema**.
+
+By default, new users do **not** get `CREATE` privileges on schemas owned by another user.
+
+---
+
+## ✅ Fix: Grant Permissions
+
+### 1. Switch to Superuser (postgres)
+
+```sql
+studentdb=# \c studentdb postgres
+Password for user postgres:
+```
+
+### 2. Grant Usage + Create Privileges
+
+```sql
+studentdb=# GRANT USAGE, CREATE ON SCHEMA public TO srimansagar;
+GRANT
+```
+
+### 3. (Optional but Recommended) Change Schema Ownership
+
+Make the schema owned by `srimansagar`:
+
+```sql
+studentdb=# ALTER SCHEMA public OWNER TO srimansagar;
+ALTER SCHEMA
+```
+
+---
+
+## 🔁 Reconnect as Application User
+
+```sql
+studentdb=# \c studentdb srimansagar;
+Password for user srimansagar:
+You are now connected to database "studentdb" as user "srimansagar".
+```
+
+---
+
+## ✅ Create Table Again
+
+```sql
+studentdb=# CREATE TABLE faculty(
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(150) NOT NULL,
+    department VARCHAR(100) NOT NULL
+);
+CREATE TABLE
+```
+
+🎉 Success! Your user now has the proper privileges to create tables within the `studentdb` public schema.
+
+---
+
+## 🧩 Summary
+
+| Step | Action                               | Purpose                       |
+| ---- | ------------------------------------ | ----------------------------- |
+| 1    | Switch to postgres                   | Gain superuser access         |
+| 2    | Grant USAGE, CREATE on schema public | Allow table creation          |
+| 3    | (Optional) Change ownership          | Make app user owner of schema |
+| 4    | Reconnect as srimansagar             | Test privileges               |
+| 5    | Create table                         | Verify fix                    |
+
+✅ Always create and manage database objects using the **application user** (e.g., `srimansagar`) to prevent permission issues in future migrations or automation scripts.
+
+# Spring Boot – Using `/api` Endpoints and ResponseEntity
+
+This guide explains how to prefix your endpoints with `/api` and properly use `ResponseEntity` for clean, RESTful responses in your Spring Boot application.
+
+---
+
+## 1. Adding `/api` to Endpoints
+
+By default, your controller endpoints might look like `/faculty` or `/hello-faculty`. To organize them under a common prefix (a best practice for versioned or modular APIs), use `@RequestMapping` at the class level:
+
+```java
+@RestController
+@RequestMapping("/api")
+public class FacultyController {
+}
+```
+
+✅ Now your endpoints become:
+
+* `/api/faculty`
+* `/api/hello-faculty`
+* `/api/faculty/{id}`
+
+This keeps your API routes consistent and easier to maintain.
+
+---
+
+## 2. What is `ResponseEntity`?
+
+`ResponseEntity<T>` is a Spring class that represents a **full HTTP response** — including:
+
+* The **HTTP status code**
+* The **response body** (e.g., a Faculty object)
+* Any **HTTP headers**
+
+Without `ResponseEntity`, you might write:
+
+```java
+@PostMapping("/faculty")
+public Faculty createFaculty(@RequestBody Faculty faculty) {
+    return facultyService.saveFaculty(faculty);
+}
+```
+
+This works but always returns **HTTP 200 OK**, even when creating a new record — which should ideally return **HTTP 201 Created**.
+
+---
+
+## 3. Using `ResponseEntity` (Best Practice)
+
+### ✅ Create (POST)
+
+```java
+@PostMapping("/faculty")
+public ResponseEntity<Faculty> createFaculty(@RequestBody Faculty faculty) {
+    Faculty savedFaculty = facultyService.saveFaculty(faculty);
+    return ResponseEntity
+            .status(201) // or HttpStatus.CREATED
+            .body(savedFaculty);
+}
+```
+
+### ✅ Update (PUT)
+
+```java
+@PutMapping("/faculty/{id}")
+public ResponseEntity<Faculty> updateFaculty(@PathVariable Long id, @RequestBody Faculty facultyDetails) {
+    Faculty updatedFaculty = facultyService.updateFaculty(id, facultyDetails);
+    return ResponseEntity.ok(updatedFaculty); // HTTP 200
+}
+```
+
+---
+
+## 4. Advantages of `ResponseEntity`
+
+* **Proper HTTP Status:** Return 201 for new records, 200 for reads, 204 for deletes.
+* **Custom Headers:** Add `Location` or other metadata easily.
+* **Consistency:** Each response clearly communicates success/failure.
+* **Maintainability:** Easier to extend or wrap responses later.
+
+---
+
+## 5. Adding a `Location` Header for Created Resources
+
+When creating new resources, REST best practices recommend returning a **Location** header with the new resource’s URI.
+
+```java
+@PostMapping("/faculty")
+public ResponseEntity<Faculty> createFaculty(@RequestBody Faculty faculty) {
+    Faculty savedFaculty = facultyService.saveFaculty(faculty);
+
+    URI location = ServletUriComponentsBuilder
+            .fromCurrentRequest()
+            .path("/{id}")
+            .buildAndExpand(savedFaculty.getId())
+            .toUri();
+
+    return ResponseEntity
+            .created(location)   // sets HTTP 201 + Location header
+            .body(savedFaculty);
+}
+```
+
+---
+
+## 6. Summary of Recommended `ResponseEntity` Usage
+
+| Situation     | HTTP Method | Recommended ResponseEntity                   | HTTP Status    |
+| ------------- | ----------- | -------------------------------------------- | -------------- |
+| **Create**    | POST        | `ResponseEntity.created(location).body(obj)` | 201 Created    |
+| **Read**      | GET         | `ResponseEntity.ok(obj)`                     | 200 OK         |
+| **Update**    | PUT         | `ResponseEntity.ok(obj)`                     | 200 OK         |
+| **Delete**    | DELETE      | `ResponseEntity.noContent().build()`         | 204 No Content |
+| **Not Found** | Any         | `throw new ResourceNotFoundException()`      | 404 Not Found  |
+
+---
+
+✅ Using `ResponseEntity` makes your Spring Boot APIs **cleaner, more RESTful, and easier to maintain**.
