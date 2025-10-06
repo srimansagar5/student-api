@@ -9,4 +9,8 @@ public interface StudentService {
     List<Student> getAllStudents();
     Student updateStudent(Long id, Student studentDetails);
     void deleteStudent(Long id);
+
+    List<Student> findByName(String name);
+    List<Student> findByAgeGreaterThan(int age);
+    List<Student> findByEmailContains(String keyword);
 }

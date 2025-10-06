@@ -1,6 +1,7 @@
 package com.vidyasagar.attendance.service;
 
 import com.vidyasagar.attendance.entity.Course;
+import com.vidyasagar.attendance.entity.Student;
 
 import java.util.List;
 
