@@ -53,4 +53,20 @@ public class StudentServiceImpl implements StudentService {
 
         studentRepository.deleteById(id);
     }
+    @Override
+    public List<Student> findByName(String name) {
+        return studentRepository.findByName(name);
+    }
+
+    @Override
+    public List<Student> findByAgeGreaterThan(int age) {
+        return studentRepository.findByAgeGreaterThan(age);
+    }
+
+    @Override
+    public List<Student> findByEmailContains(String keyword) {
+        return studentRepository.findByEmailContains(keyword);
+    }
+
+
 }

@@ -42,4 +42,20 @@ public class StudentController {
         studentService.deleteStudent(id);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/students/name/{name}")
+    public List<Student> getStudentsByName(@PathVariable String name) {
+        return studentService.findByName(name);
+    }
+
+    @GetMapping("/students/age/{age}")
+    public List<Student> getStudentsByAgeGreaterThan(@PathVariable int age) {
+        return studentService.findByAgeGreaterThan(age);
+    }
+
+    @GetMapping("/students/email/{keyword}")
+    public List<Student> getStudentsByEmailKeyword(@PathVariable String keyword) {
+        return studentService.findByEmailContains(keyword);
+    }
+
 }

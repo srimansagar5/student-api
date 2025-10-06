@@ -3,7 +3,7 @@ package com.vidyasagar.attendance.entity;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "students")
+@Table(name = "student2s")
 public class Student {
 
     @Id
@@ -16,12 +16,16 @@ public class Student {
     @Column(unique = true, nullable = false)
     private String email;
 
+    @Column(nullable = false, length = 100)
+    private int age;
+
     //Constructor
     public Student() {}
 
-    public Student(String name, String email) {
+    public Student(String name, String email, int age) {
         this.name = name;
         this.email = email;
+        this.age = age;
     }
 
     //getter and setter
@@ -33,4 +37,7 @@ public class Student {
 
     public String getEmail() {return  email;}
     public void setEmail(String email) {this.email = email;}
+
+    public int getAge() {return age;}
+    public void setAge(int age) {this.age = age;}
 }
