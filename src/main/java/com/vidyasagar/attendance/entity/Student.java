@@ -19,13 +19,17 @@ public class Student {
     @Column(nullable = false, length = 100)
     private int age;
 
+    @Column(nullable = true, length = 150)
+    private String password;
+
     //Constructor
     public Student() {}
 
-    public Student(String name, String email, int age) {
+    public Student(String name, String email, int age, String password) {
         this.name = name;
         this.email = email;
         this.age = age;
+        this.password = password;
     }
 
     //getter and setter
@@ -40,4 +44,7 @@ public class Student {
 
     public int getAge() {return age;}
     public void setAge(int age) {this.age = age;}
+
+    public String getPassword() {return password;}
+    public void setPassword(String password) {this.password = password;}
 }

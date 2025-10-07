@@ -1,11 +1,14 @@
 package com.vidyasagar.attendance.service;
 
 import com.vidyasagar.attendance.entity.Student;
+import com.vidyasagar.attendance.entity.StudentDTO;
 import com.vidyasagar.attendance.exception.ResourceNotFoundException;
 import com.vidyasagar.attendance.repository.StudentRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 @Service
 public class StudentServiceImpl implements StudentService {
@@ -14,6 +17,10 @@ public class StudentServiceImpl implements StudentService {
     // Constructor Injection
     public StudentServiceImpl(StudentRepository studentRepository) {
         this.studentRepository = studentRepository;
+    }
+
+    private StudentDTO convertToDTO(Student student) {
+        return new StudentDTO(student.getId(), student.getName(), student.getEmail());
     }
 
     @Override
@@ -27,8 +34,18 @@ public class StudentServiceImpl implements StudentService {
     }
 
     @Override
-    public List<Student> getAllStudents() {
-        return studentRepository.findAll();
+    public List<StudentDTO> getAllStudents() {
+
+        return studentRepository.findAll()
+                .stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    public StudentDTO studentGeById(Long id) {
+        Student student = studentRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Student not found with id " + id));
+        return convertToDTO(student);
     }
 
     @Override

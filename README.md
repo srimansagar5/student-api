@@ -1172,3 +1172,201 @@ These improvements make your Course API **scalable, predictable, and production-
   {"id": 1, "name": "John", "email": "john@gmail.com", "age": 22},
   {"id": 2, "name": "Alice", "email": "alice@gmail.com", "age": 25}
 ]
+
+
+# Week 3: Advanced Spring Data JPA Queries & DTOs
+
+This guide focuses on **Advanced Querying in Spring Data JPA** and implementing **DTOs (Data Transfer Objects)** for better API performance, security, and clarity.
+
+---
+
+## 🔍 Concept Recap — What’s Advanced Querying?
+
+In **Spring Data JPA**, you can write powerful database queries without manually coding SQL. These queries can be auto-generated based on method names or explicitly defined using JPQL (`@Query`).
+
+### ✳️ Examples
+
+**Repository method naming convention:**
+
+```java
+List<Student> findByEmail(String email);
+List<Student> findByAgeGreaterThan(int age);
+List<Student> findByNameContaining(String keyword);
+```
+
+**JPQL Example using @Query:**
+
+```java
+@Query("SELECT s FROM Student s WHERE s.age > :age")
+List<Student> findStudentsOlderThan(@Param("age") int age);
+```
+
+---
+
+## 🧠 What is a DTO?
+
+A **DTO (Data Transfer Object)** is a simple Java class used to:
+
+* Transfer only required data between layers or over APIs.
+* Hide sensitive/internal fields (e.g., passwords, IDs, or metadata).
+* Reduce payload size for performance.
+* Prevent lazy-loading issues or circular references with JPA entities.
+
+DTOs help ensure that API responses are **lightweight, secure, and well-structured.**
+
+---
+
+## 🧩 Example Implementation — `StudentDTO`
+
+### **1. StudentService.java**
+
+```java
+public interface StudentService {
+    List<StudentDTO> getAllStudents();
+    StudentDTO studentGeById(Long id);
+}
+```
+
+### **2. StudentServiceImpl.java**
+
+```java
+@Service
+public class StudentServiceImpl implements StudentService {
+
+    @Autowired
+    private StudentRepository studentRepository;
+
+    private StudentDTO convertToDTO(Student student) {
+        return new StudentDTO(student.getId(), student.getName(), student.getEmail());
+    }
+
+    @Override
+    public List<StudentDTO> getAllStudents() {
+        return studentRepository.findAll()
+                .stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public StudentDTO studentGeById(Long id) {
+        Student student = studentRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Student not found with id " + id));
+        return convertToDTO(student);
+    }
+}
+```
+
+### **3. StudentController.java**
+
+```java
+@RestController
+@RequestMapping("/api")
+public class StudentController {
+
+    @Autowired
+    private StudentService studentService;
+
+    @GetMapping("/students")
+    public List<StudentDTO> getAllStudents() {
+        return studentService.getAllStudents();
+    }
+
+    @GetMapping("/students/{id}")
+    public ResponseEntity<StudentDTO> getStudentById(@PathVariable Long id) {
+        StudentDTO student = studentService.studentGeById(id);
+        return ResponseEntity.ok(student);
+    }
+}
+```
+
+---
+
+## 🧮 Example Request & Response
+
+### **Request**
+
+```http
+GET /students
+```
+
+### **Response Before DTO:**
+
+```json
+[
+  {
+    "id": 1,
+    "name": "John",
+    "email": "john@gmail.com",
+    "age": 22,
+    "password": "Admin@123"
+  }
+]
+```
+
+### **Response After DTO:**
+
+```json
+[
+  {
+    "id": 1,
+    "name": "John",
+    "email": "john@gmail.com"
+  }
+]
+```
+
+✅ Cleaner, safer, and faster response!
+
+---
+
+## 🎯 Day 16 — DTOs (Data Transfer Objects)
+
+| **Purpose**                    | **Implementation**                             | **Example**                   |
+| ------------------------------ | ---------------------------------------------- | ----------------------------- |
+| Hide sensitive/internal fields | Created `StudentDTO` (id, name, email)         | Returns only required data    |
+| Convert Entity → DTO           | Added `convertToDTO()` in `StudentServiceImpl` | Uses Java Stream + map        |
+| Updated Controller             | Returns `List<StudentDTO>` instead of entity   | Lightweight, secure responses |
+
+**Sample Response:**
+
+```json
+[
+  {"id": 1, "name": "Alice", "email": "alice@gmail.com"},
+  {"id": 2, "name": "Robert", "email": "robert@gmail.com"}
+]
+```
+
+---
+
+## 🗃️ PostgreSQL Table Setup
+
+Create the `student2s` table under user **srimansagar**:
+
+```sql
+CREATE TABLE student2s (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(150) NOT NULL,
+    age INT NOT NULL
+);
+
+ALTER TABLE student2s
+ADD COLUMN password VARCHAR(150);
+```
+
+✅ Table created successfully with columns: `id`, `name`, `email`, `age`, `password`.
+
+---
+
+## 💡 Optional Improvements
+
+* Use **ModelMapper** or **MapStruct** to automate Entity ↔ DTO conversion.
+* Add filtering or pagination to `getAllStudents()`.
+* Implement **custom JPQL queries** for advanced search functionality.
+
+---
+
+📘 **Summary:**
+This week focused on **advanced JPA querying**, introducing **DTOs** to ensure secure, minimal, and efficient API responses — a crucial step toward building scalable backend systems.
+

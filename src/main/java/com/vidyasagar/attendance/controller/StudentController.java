@@ -1,6 +1,7 @@
 package com.vidyasagar.attendance.controller;
 
 import com.vidyasagar.attendance.entity.Student;
+import com.vidyasagar.attendance.entity.StudentDTO;
 import com.vidyasagar.attendance.service.StudentService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Repository;
@@ -28,9 +29,16 @@ public class StudentController {
     }
 
     @GetMapping("/students")
-    public List<Student> getAllStudents() {
+    public List<StudentDTO> getAllStudents() {
         return studentService.getAllStudents();
     }
+
+    @GetMapping("/students/{id}")
+    public ResponseEntity<StudentDTO> getStudentById(@PathVariable Long id) {
+        StudentDTO student = studentService.studentGeById(id);
+        return ResponseEntity.ok(student);
+    }
+
 
     @PutMapping("/students/{id}")
     public Student updateStudent(@PathVariable Long id, @RequestBody Student studentDetails) {
