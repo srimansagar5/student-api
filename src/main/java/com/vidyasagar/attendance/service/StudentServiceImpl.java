@@ -3,6 +3,7 @@ package com.vidyasagar.attendance.service;
 import com.vidyasagar.attendance.entity.Student;
 import com.vidyasagar.attendance.entity.StudentDTO;
 import com.vidyasagar.attendance.exception.ResourceNotFoundException;
+import com.vidyasagar.attendance.mapper.StudentMapper;
 import com.vidyasagar.attendance.repository.StudentRepository;
 import org.springframework.stereotype.Service;
 
@@ -13,10 +14,11 @@ import java.util.stream.Collectors;
 @Service
 public class StudentServiceImpl implements StudentService {
     private final StudentRepository studentRepository;
-
+    private final StudentMapper studentMapper;
     // Constructor Injection
-    public StudentServiceImpl(StudentRepository studentRepository) {
+    public StudentServiceImpl(StudentRepository studentRepository, StudentMapper studentMapper) {
         this.studentRepository = studentRepository;
+        this.studentMapper = studentMapper;
     }
 
     private StudentDTO convertToDTO(Student student) {
@@ -35,17 +37,22 @@ public class StudentServiceImpl implements StudentService {
 
     @Override
     public List<StudentDTO> getAllStudents() {
-
-        return studentRepository.findAll()
-                .stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+        List<Student> students = studentRepository.findAll();
+        return studentMapper.toDTOList(students);
+//        return studentRepository.findAll()
+//                .stream()
+//                .map(this::convertToDTO)
+//                .collect(Collectors.toList());
     }
 
     public StudentDTO studentGeById(Long id) {
         Student student = studentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Student not found with id " + id));
-        return convertToDTO(student);
+        return studentMapper.toDTO(student);
+
+//        Student student = studentRepository.findById(id)
+//                .orElseThrow(() -> new ResourceNotFoundException("Student not found with id " + id));
+//        return convertToDTO(student);
     }
 
     @Override

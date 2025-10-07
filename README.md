@@ -1370,3 +1370,362 @@ ADD COLUMN password VARCHAR(150);
 📘 **Summary:**
 This week focused on **advanced JPA querying**, introducing **DTOs** to ensure secure, minimal, and efficient API responses — a crucial step toward building scalable backend systems.
 
+# 📘 Mapping Entities → DTOs in student-api
+
+This document explains how to simplify object mapping in Spring Boot — converting between **Entity** and **DTO** classes efficiently using tools like **ModelMapper** and **MapStruct**.
+
+---
+
+## 💡 Why Mapping Matters
+
+When building REST APIs, you often need to send **DTOs (Data Transfer Objects)** instead of full entities to:
+
+* 🔒 Hide sensitive fields (e.g., passwords)
+* 🧱 Avoid exposing database structure
+* 📦 Control API response shape
+* ⚙️ Improve maintainability
+
+Manually mapping these can get repetitive — here are cleaner options.
+
+---
+
+## ⚙️ Mapping Approaches
+
+### 🔹 Option 1: Use ModelMapper (Simple, runtime reflection)
+
+**Add dependency in `pom.xml`:**
+
+```xml
+<dependency>
+    <groupId>org.modelmapper</groupId>
+    <artifactId>modelmapper</artifactId>
+    <version>3.2.0</version>
+</dependency>
+```
+
+**Usage:**
+
+```java
+import org.modelmapper.ModelMapper;
+
+@Service
+public class StudentServiceImpl implements StudentService {
+
+    private final StudentRepository studentRepository;
+    private final ModelMapper modelMapper = new ModelMapper();
+
+    private StudentDTO convertToDTO(Student student) {
+        return modelMapper.map(student, StudentDTO.class);
+    }
+
+    private Student convertToEntity(StudentDTO dto) {
+        return modelMapper.map(dto, Student.class);
+    }
+}
+```
+
+✅ Automatically maps fields with the same names.
+💡 You can also define custom mappings (e.g., `emailAddress → email`).
+
+---
+
+### 🔹 Option 2: Use MapStruct (Recommended — compile-time, type-safe)
+
+**MapStruct** generates mappers at compile time — faster, safer, and ideal for enterprise projects.
+
+#### 🧠 Advantages:
+
+* ⚡ **Faster** – no reflection
+* 🧱 **Type-safe** – compiler validates mappings
+* 🧩 **Maintainable** – easily scales with project size
+
+---
+
+## 🧠 Integrating MapStruct into student-api
+
+### Step 1: Add Maven Dependencies
+
+Add inside `<dependencies>`:
+
+```xml
+<!-- MapStruct -->
+<dependency>
+    <groupId>org.mapstruct</groupId>
+    <artifactId>mapstruct</artifactId>
+    <version>1.5.5.Final</version>
+</dependency>
+
+<!-- MapStruct Processor -->
+<dependency>
+    <groupId>org.mapstruct</groupId>
+    <artifactId>mapstruct-processor</artifactId>
+    <version>1.5.5.Final</version>
+    <scope>provided</scope>
+</dependency>
+```
+
+Add compiler plugin under `<build>`:
+
+```xml
+<build>
+    <plugins>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <version>3.11.0</version>
+            <configuration>
+                <source>21</source>
+                <target>21</target>
+                <annotationProcessorPaths>
+                    <path>
+                        <groupId>org.mapstruct</groupId>
+                        <artifactId>mapstruct-processor</artifactId>
+                        <version>1.5.5.Final</version>
+                    </path>
+                </annotationProcessorPaths>
+            </configuration>
+        </plugin>
+    </plugins>
+</build>
+```
+
+✅ Now Maven will generate mapper implementations at compile time.
+
+---
+
+### Step 2: Create the Mapper Interface
+
+`StudentMapper.java`
+
+```java
+package com.vidyasagar.attendance.mapper;
+
+import com.vidyasagar.attendance.entity.Student;
+import com.vidyasagar.attendance.entity.StudentDTO;
+import org.mapstruct.Mapper;
+import java.util.List;
+
+@Mapper(componentModel = "spring")
+public interface StudentMapper {
+    StudentDTO toDTO(Student student);
+    Student toEntity(StudentDTO dto);
+    List<StudentDTO> toDTOList(List<Student> students);
+}
+```
+
+---
+
+### Step 3: Use the Mapper in the Service
+
+`StudentServiceImpl.java`
+
+```java
+@Service
+public class StudentServiceImpl implements StudentService {
+
+    private final StudentRepository studentRepository;
+    private final StudentMapper studentMapper;
+
+    public StudentServiceImpl(StudentRepository studentRepository, StudentMapper studentMapper) {
+        this.studentRepository = studentRepository;
+        this.studentMapper = studentMapper;
+    }
+
+    @Override
+    public List<StudentDTO> getAllStudents() {
+        return studentMapper.toDTOList(studentRepository.findAll());
+    }
+
+    @Override
+    public StudentDTO studentGeById(Long id) {
+        Student student = studentRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Student not found with id " + id));
+        return studentMapper.toDTO(student);
+    }
+}
+```
+
+---
+
+### Step 4: Generated Code (for Reference)
+
+After building, MapStruct auto-generates:
+
+```
+target/generated-sources/annotations/com/vidyasagar/attendance/mapper/StudentMapperImpl.java
+```
+
+Example:
+
+```java
+@Component
+public class StudentMapperImpl implements StudentMapper {
+
+    @Override
+    public StudentDTO toDTO(Student student) {
+        if (student == null) return null;
+        StudentDTO dto = new StudentDTO();
+        dto.setId(student.getId());
+        dto.setName(student.getName());
+        dto.setEmail(student.getEmail());
+        return dto;
+    }
+
+    @Override
+    public Student toEntity(StudentDTO dto) {
+        if (dto == null) return null;
+        Student student = new Student();
+        student.setId(dto.getId());
+        student.setName(dto.getName());
+        student.setEmail(dto.getEmail());
+        return student;
+    }
+
+    @Override
+    public List<StudentDTO> toDTOList(List<Student> students) {
+        if (students == null) return null;
+        return students.stream().map(this::toDTO).toList();
+    }
+}
+```
+
+✅ Generated automatically — no manual maintenance required.
+
+---
+
+## 🚨 Common Issues During Integration
+
+If you see errors like:
+
+```
+Dependency 'org.mapstruct:mapstruct:1.5.5.Final' not found
+Plugin 'org.apache.maven.plugins:maven-compiler-plugin:3.11.0' not found
+```
+
+### Fix — Configure Maven Settings
+
+If `settings.xml` is missing:
+
+1. Right-click project → **Maven → Create settings.xml**
+2. Maven generates it at:
+
+```
+C:\Users\Admin\.m2\settings.xml
+```
+
+Replace contents with:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
+                              https://maven.apache.org/xsd/settings-1.0.0.xsd">
+    <mirrors>
+        <mirror>
+            <id>central</id>
+            <name>Maven Central Mirror</name>
+            <url>https://repo.maven.apache.org/maven2</url>
+            <mirrorOf>central</mirrorOf>
+        </mirror>
+    </mirrors>
+
+    <profiles>
+        <profile>
+            <id>default</id>
+            <repositories>
+                <repository>
+                    <id>central</id>
+                    <url>https://repo.maven.apache.org/maven2</url>
+                    <releases>
+                        <enabled>true</enabled>
+                    </releases>
+                    <snapshots>
+                        <enabled>false</enabled>
+                    </snapshots>
+                </repository>
+            </repositories>
+        </profile>
+    </profiles>
+
+    <activeProfiles>
+        <activeProfile>default</activeProfile>
+    </activeProfiles>
+</settings>
+```
+
+Then sync project:
+
+```
+Right-click → Maven → Reload Project
+mvn clean compile -U
+```
+
+✅ This downloads all dependencies freshly.
+
+---
+
+### 📘 Option 3: Keep Manual Mapping (for small APIs)
+
+For simple projects, manual mapping is fine. You can move logic into a helper class:
+
+```java
+public class StudentMapperUtil {
+    public static StudentDTO toDTO(Student student) {
+        return new StudentDTO(student.getId(), student.getName(), student.getEmail());
+    }
+}
+```
+
+✅ Simple, readable, and no dependencies.
+
+---
+
+## ✅ Summary: Mapping Options Comparison
+
+| **Option**     | **Type**             | **Performance** | **Setup** | **Best For**                   |
+| -------------- | -------------------- | --------------- | --------- | ------------------------------ |
+| Manual Mapping | Code-based           | ⚡ Fast          | Minimal   | Learning & small apps          |
+| ModelMapper    | Runtime (Reflection) | 🐢 Slower       | Easy      | Quick demos                    |
+| MapStruct      | Compile-time         | ⚡⚡ Fastest      | Medium    | Enterprise & scalable projects |
+
+---
+
+## 🧾 Example API Response
+
+```json
+{
+  "id": 1,
+  "name": "John Doe",
+  "email": "john.doe@gmail.com"
+}
+```
+
+---
+
+## 🧠 Benefits of Using MapStruct
+
+| **Feature**   | **Advantage**                      |
+| ------------- | ---------------------------------- |
+| 🧠 Type-safe  | Compiler catches mismatched fields |
+| ⚡ Fast        | No reflection overhead             |
+| 🧩 Clean      | Removes manual boilerplate         |
+| 🔁 Reusable   | Works for all entities             |
+| 🔄 Extensible | Handles nested mappings & lists    |
+
+---
+
+## ✅ Verification Commands
+
+```bash
+mvn clean install
+```
+
+If build succeeds and you see:
+
+```
+MapStruct: generating mapper implementation for StudentMapper
+BUILD SUCCESS
+```
+
+🎉 Integration complete!
