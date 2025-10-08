@@ -9,7 +9,7 @@ public interface StudentService {
     String getHelloMessage();
     Student saveStudent(Student student);
     List<StudentDTO> getAllStudents();
-    StudentDTO studentGeById(Long id);
+    StudentDTO getStudentById(Long id);
     Student updateStudent(Long id, Student studentDetails);
     void deleteStudent(Long id);
 
