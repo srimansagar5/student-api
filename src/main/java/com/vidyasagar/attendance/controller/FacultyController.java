@@ -11,7 +11,7 @@ import java.net.URI;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/v1/faculty")
 public class FacultyController {
     private final FacultyService facultyService;
 
@@ -26,7 +26,7 @@ public class FacultyController {
         return  facultyService.getFacultyMessage();
     }
 
-    @PostMapping("/faculty")
+    @PostMapping
     public ResponseEntity<Faculty> createFaculty(@RequestBody Faculty faculty) {
         Faculty savedFaculty = facultyService.saveFaculty(faculty);
         URI location = ServletUriComponentsBuilder
@@ -40,12 +40,13 @@ public class FacultyController {
                 .body(savedFaculty);
     }
 
-    @GetMapping("/faculty")
-    public List<Faculty> getAllFaculty() {
-        return facultyService.getAllFaculty();
+    @GetMapping
+    public ResponseEntity<List<Faculty>> getAllFaculty() {
+        List<Faculty> faculties =  facultyService.getAllFaculty();
+        return ResponseEntity.ok(faculties);
     }
 
-    @PutMapping("/faculty/{id}")
+    @PutMapping("/{id}")
     public ResponseEntity<Faculty> updateFaculty(@PathVariable Long id, @RequestBody Faculty facultyDetails) {
         Faculty updatedFaculty = facultyService.updateFaculty(id, facultyDetails);
 
@@ -55,7 +56,7 @@ public class FacultyController {
     }
 
 
-    @DeleteMapping("/faculty/{id}")
+    @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteFaculty(@PathVariable Long id) {
         facultyService.deleteFaculty(id);
         return ResponseEntity.noContent().build(); // HTTP 204

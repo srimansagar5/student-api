@@ -21,9 +21,9 @@ public class StudentServiceImpl implements StudentService {
         this.studentMapper = studentMapper;
     }
 
-    private StudentDTO convertToDTO(Student student) {
-        return new StudentDTO(student.getId(), student.getName(), student.getEmail());
-    }
+//    private StudentDTO convertToDTO(Student student) {
+//        return new StudentDTO(student.getId(), student.getName(), student.getEmail());
+//    }
 
     @Override
     public String getHelloMessage() {
@@ -45,7 +45,7 @@ public class StudentServiceImpl implements StudentService {
 //                .collect(Collectors.toList());
     }
 
-    public StudentDTO studentGeById(Long id) {
+    public StudentDTO getStudentById(Long id) {
         Student student = studentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Student not found with id " + id));
         return studentMapper.toDTO(student);

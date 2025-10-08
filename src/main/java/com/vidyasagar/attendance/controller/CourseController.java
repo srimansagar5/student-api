@@ -44,8 +44,9 @@ public class CourseController {
     }
 
     @GetMapping
-    public List<Course> getAllCourses() {
-        return courseService.getAllCourses();
+    public ResponseEntity<List<Course>> getAllCourses() {
+        List<Course> courses = courseService.getAllCourses();
+        return ResponseEntity.ok(courses);
     }
 
     @GetMapping("/{id}")

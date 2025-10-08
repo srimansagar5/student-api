@@ -3,13 +3,18 @@ package com.vidyasagar.attendance.controller;
 import com.vidyasagar.attendance.entity.Student;
 import com.vidyasagar.attendance.entity.StudentDTO;
 import com.vidyasagar.attendance.service.StudentService;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Repository;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.net.URI;
 import java.util.List;
 
 @RestController
+@RequestMapping("/api/v1/students")
 public class StudentController {
     private final StudentService studentService;
 
@@ -23,47 +28,61 @@ public class StudentController {
         return studentService.getHelloMessage();
     }
 
-    @PostMapping("/students")
-    public Student createStudent(@RequestBody Student student) {
-        return studentService.saveStudent(student);
+    @PostMapping
+    public ResponseEntity<Student> createStudent(@RequestBody Student student) {
+
+        Student saveStudent = studentService.saveStudent(student);
+        URI location = ServletUriComponentsBuilder
+                .fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(saveStudent.getId())
+                .toUri();
+        return ResponseEntity.created(location).body(saveStudent);
     }
 
-    @GetMapping("/students")
-    public List<StudentDTO> getAllStudents() {
-        return studentService.getAllStudents();
+    @GetMapping
+    public ResponseEntity<List<StudentDTO>> getAllStudents() {
+        List<StudentDTO> getAllStudents = studentService.getAllStudents();
+        return ResponseEntity.ok(getAllStudents);
     }
 
-    @GetMapping("/students/{id}")
+    @GetMapping("/{id}")
     public ResponseEntity<StudentDTO> getStudentById(@PathVariable Long id) {
-        StudentDTO student = studentService.studentGeById(id);
+        StudentDTO student = studentService.getStudentById(id);
         return ResponseEntity.ok(student);
     }
 
 
-    @PutMapping("/students/{id}")
-    public Student updateStudent(@PathVariable Long id, @RequestBody Student studentDetails) {
-        return studentService.updateStudent(id, studentDetails);
+    @PutMapping("/{id}")
+    public ResponseEntity<Student> updateStudent(@PathVariable Long id, @RequestBody Student studentDetails) {
+        Student updateStudent = studentService.updateStudent(id, studentDetails);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(updateStudent);
     }
 
-    @DeleteMapping("/students/{id}")
+    @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteStudent(@PathVariable Long id) {
         studentService.deleteStudent(id);
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/students/name/{name}")
-    public List<Student> getStudentsByName(@PathVariable String name) {
-        return studentService.findByName(name);
+    @GetMapping("/name/{name}")
+    public ResponseEntity<List<Student>> getStudentsByName(@PathVariable String name) {
+        List<Student> students = studentService.findByName(name);
+        return ResponseEntity.ok(students);
     }
 
-    @GetMapping("/students/age/{age}")
-    public List<Student> getStudentsByAgeGreaterThan(@PathVariable int age) {
-        return studentService.findByAgeGreaterThan(age);
+    @GetMapping("/age/{age}")
+    public ResponseEntity<List<Student>> getStudentsByAgeGreaterThan(@PathVariable int age) {
+        List<Student> students = studentService.findByAgeGreaterThan(age);
+        return ResponseEntity.ok(students);
     }
 
-    @GetMapping("/students/email/{keyword}")
-    public List<Student> getStudentsByEmailKeyword(@PathVariable String keyword) {
-        return studentService.findByEmailContains(keyword);
+    @GetMapping("/email/{keyword}")
+    public ResponseEntity<List<Student>> getStudentsByEmailKeyword(@PathVariable String keyword) {
+        List<Student> students = studentService.findByEmailContains(keyword);
+        return ResponseEntity.ok(students);
     }
 
 }
