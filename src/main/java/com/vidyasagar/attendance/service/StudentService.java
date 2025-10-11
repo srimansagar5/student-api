@@ -14,6 +14,6 @@ public interface StudentService {
     void deleteStudent(Long id);
 
     List<StudentDTO> findByName(String name);
-    List<StudentDTO> findByAgeGreaterThan(int age);
+    List<StudentDTO> findByAgeGreaterThan(Integer age);
     List<StudentDTO> findByEmailContains(String keyword);
 }

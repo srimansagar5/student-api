@@ -29,15 +29,15 @@ public class StudentController {
     }
 
     @PostMapping
-    public ResponseEntity<StudentDTO> createStudent(@RequestBody StudentDTO studentDto) {
+    public ResponseEntity<StudentDTO> createStudent(@Valid @RequestBody StudentDTO studentDto) {
 
-        StudentDTO saveStudent = studentService.saveStudent(studentDto);
+        StudentDTO savedStudent = studentService.saveStudent(studentDto);
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest()
                 .path("/{id}")
-                .buildAndExpand(saveStudent.getId())
+                .buildAndExpand(savedStudent.getId())
                 .toUri();
-        return ResponseEntity.created(location).body(saveStudent);
+        return ResponseEntity.created(location).body(savedStudent);
     }
 
     @GetMapping
@@ -54,7 +54,7 @@ public class StudentController {
 
 
     @PutMapping("/{id}")
-    public ResponseEntity<StudentDTO> updateStudent(@PathVariable Long id, @RequestBody StudentDTO studentDetails) {
+    public ResponseEntity<StudentDTO> updateStudent(@PathVariable Long id, @Valid @RequestBody StudentDTO studentDetails) {
         StudentDTO updateStudent = studentService.updateStudent(id, studentDetails);
         return ResponseEntity
                 .status(HttpStatus.OK)
