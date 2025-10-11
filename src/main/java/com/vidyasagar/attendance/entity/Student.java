@@ -11,23 +11,21 @@ public class Student {
     @GeneratedValue(strategy = GenerationType.IDENTITY) // auto-increment
     private Long id;
 
-    @NotBlank(message = "Name is required")
-    @Size(min = 2, max = 100, message = "Name should be between 2 and 100 characters")
+  //  @NotBlank(message = "Name is required")
+  //  @Size(min = 2, max = 100, message = "Name should be between 2 and 100 characters")
     @Column(nullable = false, length = 100)
     private String name;
 
-    @NotBlank(message = "Email is required")
-    @Email(message = "Please enter a valid email address")
+  //  @NotBlank(message = "Email is required")
+  //  @Email(message = "Please enter a valid email address")
     @Column(unique = true, nullable = false)
     private String email;
 
-    @Min(value = 18, message = "Age must be at least 18")
-    @Max(value = 60, message = "Age must not exceed 60")
-    @Column(nullable = false, length = 100)
+ //   @Min(value = 18, message = "Age must be at least 18")
+  //  @Max(value = 60, message = "Age must not exceed 60")
+    @Column(nullable = true, length = 100)
     private int age;
 
-    @NotBlank(message = "Password cannot be empty")
-    @Size(min = 6, message = "Password must be at least 6 characters")
     @Column(nullable = true, length = 150)
     private String password;
 

@@ -7,13 +7,13 @@ import java.util.List;
 
 public interface StudentService {
     String getHelloMessage();
-    Student saveStudent(Student student);
+    StudentDTO saveStudent(StudentDTO studentDto);
     List<StudentDTO> getAllStudents();
     StudentDTO getStudentById(Long id);
-    Student updateStudent(Long id, Student studentDetails);
+    StudentDTO updateStudent(Long id, StudentDTO studentDetails);
     void deleteStudent(Long id);
 
-    List<Student> findByName(String name);
-    List<Student> findByAgeGreaterThan(int age);
-    List<Student> findByEmailContains(String keyword);
+    List<StudentDTO> findByName(String name);
+    List<StudentDTO> findByAgeGreaterThan(int age);
+    List<StudentDTO> findByEmailContains(String keyword);
 }

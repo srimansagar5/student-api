@@ -2,7 +2,7 @@ package com.vidyasagar.attendance.mapper;
 
 import com.vidyasagar.attendance.entity.Student;
 import com.vidyasagar.attendance.entity.StudentDTO;
-import org.mapstruct.Mapper;
+import org.mapstruct.*;
 
 import java.util.List;
 
@@ -17,4 +17,9 @@ public interface StudentMapper {
 
     //List<Entity> -> List<DTO>
     List<StudentDTO> toDTOList(List<Student> students);
+
+    //Update existing entity from DTO (Used for PUT)
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mapping(target = "id", ignore = true)
+    void updateStudentFromDTO(StudentDTO dto, @MappingTarget Student entity);
 }

@@ -29,9 +29,9 @@ public class StudentController {
     }
 
     @PostMapping
-    public ResponseEntity<Student> createStudent(@RequestBody Student student) {
+    public ResponseEntity<StudentDTO> createStudent(@RequestBody StudentDTO studentDto) {
 
-        Student saveStudent = studentService.saveStudent(student);
+        StudentDTO saveStudent = studentService.saveStudent(studentDto);
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest()
                 .path("/{id}")
@@ -54,8 +54,8 @@ public class StudentController {
 
 
     @PutMapping("/{id}")
-    public ResponseEntity<Student> updateStudent(@PathVariable Long id, @RequestBody Student studentDetails) {
-        Student updateStudent = studentService.updateStudent(id, studentDetails);
+    public ResponseEntity<StudentDTO> updateStudent(@PathVariable Long id, @RequestBody StudentDTO studentDetails) {
+        StudentDTO updateStudent = studentService.updateStudent(id, studentDetails);
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(updateStudent);
@@ -68,20 +68,20 @@ public class StudentController {
     }
 
     @GetMapping("/name/{name}")
-    public ResponseEntity<List<Student>> getStudentsByName(@PathVariable String name) {
-        List<Student> students = studentService.findByName(name);
+    public ResponseEntity<List<StudentDTO>> getStudentsByName(@PathVariable String name) {
+        List<StudentDTO> students = studentService.findByName(name);
         return ResponseEntity.ok(students);
     }
 
     @GetMapping("/age/{age}")
-    public ResponseEntity<List<Student>> getStudentsByAgeGreaterThan(@PathVariable int age) {
-        List<Student> students = studentService.findByAgeGreaterThan(age);
+    public ResponseEntity<List<StudentDTO>> getStudentsByAgeGreaterThan(@PathVariable int age) {
+        List<StudentDTO> students = studentService.findByAgeGreaterThan(age);
         return ResponseEntity.ok(students);
     }
 
     @GetMapping("/email/{keyword}")
-    public ResponseEntity<List<Student>> getStudentsByEmailKeyword(@PathVariable String keyword) {
-        List<Student> students = studentService.findByEmailContains(keyword);
+    public ResponseEntity<List<StudentDTO>> getStudentsByEmailKeyword(@PathVariable String keyword) {
+        List<StudentDTO> students = studentService.findByEmailContains(keyword);
         return ResponseEntity.ok(students);
     }
 
