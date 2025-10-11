@@ -1,10 +1,22 @@
 package com.vidyasagar.attendance.entity;
 
+import jakarta.validation.constraints.*;
+
 public class StudentDTO {
     private Long id;
+
+    @NotNull(message = "Name cannot be null")
+    @Size(min = 3, max = 50, message = "Name must be between 3 and 50 characters")
     private String name;
+
+    @NotNull(message = "Email cannot be null")
+    @Email(message = "Email should be valid")
     private String email;
-    private int age;
+
+    @Min(value = 18, message = "Age must be at least 18")
+    @Max(value = 60, message = "Age must not exceed 60")
+    @NotNull(message = "Age cannot be null")
+    private Integer age;
 
     // Constructor
     public StudentDTO() {}

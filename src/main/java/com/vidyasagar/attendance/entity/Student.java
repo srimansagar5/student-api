@@ -24,7 +24,7 @@ public class Student {
  //   @Min(value = 18, message = "Age must be at least 18")
   //  @Max(value = 60, message = "Age must not exceed 60")
     @Column(nullable = true, length = 100)
-    private int age;
+    private Integer age;
 
     @Column(nullable = true, length = 150)
     private String password;
@@ -32,7 +32,7 @@ public class Student {
     //Constructor
     public Student() {}
 
-    public Student(String name, String email, int age, String password) {
+    public Student(String name, String email, Integer age, String password) {
         this.name = name;
         this.email = email;
         this.age = age;
@@ -49,8 +49,8 @@ public class Student {
     public String getEmail() {return  email;}
     public void setEmail(String email) {this.email = email;}
 
-    public int getAge() {return age;}
-    public void setAge(int age) {this.age = age;}
+    public Integer getAge() {return age;}
+    public void setAge(Integer age) {this.age = age;}
 
     public String getPassword() {return password;}
     public void setPassword(String password) {this.password = password;}

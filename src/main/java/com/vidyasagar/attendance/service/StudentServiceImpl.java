@@ -138,7 +138,7 @@ public class StudentServiceImpl implements StudentService {
      * @return List of StudentDTO objects where student.age > given age
      */
     @Override
-    public List<StudentDTO> findByAgeGreaterThan(int age) {
+    public List<StudentDTO> findByAgeGreaterThan(Integer age) {
         List<Student> students = studentRepository.findByAgeGreaterThan(age);
         return studentMapper.toDTOList(students);
     }

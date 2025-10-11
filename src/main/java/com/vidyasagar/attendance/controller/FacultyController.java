@@ -54,8 +54,6 @@ public class FacultyController {
                 .status(HttpStatus.OK) // HTTP 200
                 .body(updatedFaculty);
     }
-
-
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteFaculty(@PathVariable Long id) {
         facultyService.deleteFaculty(id);
