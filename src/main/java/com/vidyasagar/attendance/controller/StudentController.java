@@ -4,6 +4,10 @@ import com.vidyasagar.attendance.entity.Student;
 import com.vidyasagar.attendance.entity.StudentDTO;
 import com.vidyasagar.attendance.service.StudentService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Repository;
@@ -44,6 +48,13 @@ public class StudentController {
     public ResponseEntity<List<StudentDTO>> getAllStudents() {
         List<StudentDTO> getAllStudents = studentService.getAllStudents();
         return ResponseEntity.ok(getAllStudents);
+    }
+
+    @GetMapping("/pages")
+    public ResponseEntity<Page<StudentDTO>> getAllStudentsPage(
+            @PageableDefault(page =0, size = 10, sort = "name", direction = Sort.Direction.ASC) Pageable pageable) {
+        Page<StudentDTO> studentDTOPage = studentService.getAllStudentsPage(pageable);
+        return ResponseEntity.ok(studentDTOPage);
     }
 
     @GetMapping("/{id}")
