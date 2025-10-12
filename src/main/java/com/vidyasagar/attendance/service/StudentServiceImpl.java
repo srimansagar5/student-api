@@ -5,6 +5,9 @@ import com.vidyasagar.attendance.entity.StudentDTO;
 import com.vidyasagar.attendance.exception.ResourceNotFoundException;
 import com.vidyasagar.attendance.mapper.StudentMapper;
 import com.vidyasagar.attendance.repository.StudentRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -20,6 +23,7 @@ public class StudentServiceImpl implements StudentService {
     private final StudentMapper studentMapper;
 
     // Constructor Injection
+    @Autowired
     public StudentServiceImpl(StudentRepository studentRepository, StudentMapper studentMapper) {
         this.studentRepository = studentRepository;
         this.studentMapper = studentMapper;
@@ -60,6 +64,12 @@ public class StudentServiceImpl implements StudentService {
 //                .stream()
 //                .map(this::convertToDTO)
 //                .collect(Collectors.toList());
+    }
+
+    @Override
+    public Page<StudentDTO> getAllStudentsPage(Pageable pageable) {
+        Page<Student> studentPage = studentRepository.findAll(pageable);
+        return studentPage.map(studentMapper::toDTO);
     }
 
     /**
