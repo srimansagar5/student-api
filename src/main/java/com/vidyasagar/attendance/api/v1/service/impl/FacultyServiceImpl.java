@@ -1,15 +1,15 @@
-package com.vidyasagar.attendance.service;
+package com.vidyasagar.attendance.api.v1.service.impl;
 
+import com.vidyasagar.attendance.api.v1.service.FacultyService;
 import com.vidyasagar.attendance.entity.Faculty;
 import com.vidyasagar.attendance.exception.ResourceNotFoundException;
-import com.vidyasagar.attendance.repository.FacultyRepository;
+import com.vidyasagar.attendance.api.v1.repository.FacultyRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
 public class FacultyServiceImpl implements FacultyService {
-
     private final FacultyRepository facultyRepository;
 
     // Constructor Injection
@@ -34,7 +34,7 @@ public class FacultyServiceImpl implements FacultyService {
     public Faculty updateFaculty(Long id, Faculty facultyDetails) {
         // Find existing faculty
         Faculty faculty = facultyRepository.findById(id)
-                        .orElseThrow(() -> new ResourceNotFoundException("Faculty not found with id " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Faculty not found with id " + id));
 
         faculty.setName(facultyDetails.getName());
         faculty.setEmail(facultyDetails.getEmail());

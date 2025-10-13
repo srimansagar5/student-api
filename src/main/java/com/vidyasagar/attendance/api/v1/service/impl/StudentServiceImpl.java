@@ -1,10 +1,11 @@
-package com.vidyasagar.attendance.service;
+package com.vidyasagar.attendance.api.v1.service.impl;
 
+import com.vidyasagar.attendance.api.v1.service.StudentService;
 import com.vidyasagar.attendance.entity.Student;
-import com.vidyasagar.attendance.entity.StudentDTO;
+import com.vidyasagar.attendance.api.v1.dto.response.StudentDTO;
 import com.vidyasagar.attendance.exception.ResourceNotFoundException;
-import com.vidyasagar.attendance.mapper.StudentMapper;
-import com.vidyasagar.attendance.repository.StudentRepository;
+import com.vidyasagar.attendance.api.v1.mapper.StudentMapper;
+import com.vidyasagar.attendance.api.v1.repository.StudentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

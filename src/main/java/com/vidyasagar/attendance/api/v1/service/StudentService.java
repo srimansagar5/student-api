@@ -1,7 +1,6 @@
-package com.vidyasagar.attendance.service;
+package com.vidyasagar.attendance.api.v1.service;
 
-import com.vidyasagar.attendance.entity.Student;
-import com.vidyasagar.attendance.entity.StudentDTO;
+import com.vidyasagar.attendance.api.v1.dto.response.StudentDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 

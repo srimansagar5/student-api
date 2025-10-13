@@ -1,8 +1,10 @@
-package com.vidyasagar.attendance.mapper;
+package com.vidyasagar.attendance.api.v1.mapper;
 
 import com.vidyasagar.attendance.entity.Student;
-import com.vidyasagar.attendance.entity.StudentDTO;
+import com.vidyasagar.attendance.api.v1.dto.response.StudentDTO;
 import org.mapstruct.*;
+
+import org.mapstruct.Mapper;
 
 import java.util.List;
 

@@ -1,11 +1,10 @@
-package com.vidyasagar.attendance.service;
+package com.vidyasagar.attendance.api.v1.service.impl;
 
+import com.vidyasagar.attendance.api.v1.service.CourseService;
 import com.vidyasagar.attendance.entity.Course;
-import com.vidyasagar.attendance.entity.Student;
 import com.vidyasagar.attendance.exception.ResourceNotFoundException;
-import com.vidyasagar.attendance.repository.CourseRepository;
+import com.vidyasagar.attendance.api.v1.repository.CourseRepository;
 import org.springframework.stereotype.Service;
-
 
 import java.util.List;
 
@@ -42,7 +41,7 @@ public class CourseServiceImpl implements CourseService {
     @Override
     public Course updateCourse(Long id, Course courseDetails){
         Course course = courseRepository.findById(id)
-                        .orElseThrow(() -> new ResourceNotFoundException("Course not found with id " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Course not found with id " + id));
 
         course.setCredits(courseDetails.getCredits());
         course.setTitle(courseDetails.getTitle());
