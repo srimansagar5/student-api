@@ -1,4 +1,4 @@
-package com.vidyasagar.attendance.entity;
+package com.vidyasagar.attendance.api.v1.dto.response;
 
 import jakarta.validation.constraints.*;
 

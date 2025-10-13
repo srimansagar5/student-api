@@ -1,8 +1,7 @@
-package com.vidyasagar.attendance.controller;
+package com.vidyasagar.attendance.api.v1.controller.student;
 
-import com.vidyasagar.attendance.entity.Student;
-import com.vidyasagar.attendance.entity.StudentDTO;
-import com.vidyasagar.attendance.service.StudentService;
+import com.vidyasagar.attendance.api.v1.service.StudentService;
+import com.vidyasagar.attendance.api.v1.dto.response.StudentDTO;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -10,7 +9,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Repository;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -95,5 +93,4 @@ public class StudentController {
         List<StudentDTO> students = studentService.findByEmailContains(keyword);
         return ResponseEntity.ok(students);
     }
-
 }

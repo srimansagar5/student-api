@@ -1729,3 +1729,272 @@ BUILD SUCCESS
 ```
 
 🎉 Integration complete!
+
+
+# 📘 Project Folder Structure – `student-api`
+
+This document explains the **modular folder structure** for the `com.vidyasagar.attendance` package, built for scalability, clarity, and maintainability.
+
+---
+
+## 📂 Updated Folder Structure
+
+```
+com.vidyasagar.attendance
+│
+├── api
+│   └── v1
+│       ├── controller
+│       │   ├── student
+│       │   │   └── StudentController.java
+│       │   ├── course
+│       │   │   └── CourseController.java
+│       │   └── faculty
+│       │       └── FacultyController.java
+│       │
+│       ├── dto
+│       │   ├── request
+│       │   │   ├── StudentSearchRequest.java
+│       │   │   ├── StudentRequest.java
+│       │   │   ├── CourseRequest.java
+│       │   │   └── FacultyRequest.java
+│       │   │
+│       │   ├── response
+│       │   │   ├── StudentDTO.java
+│       │   │   ├── CourseDTO.java
+│       │   │   └── FacultyDTO.java
+│       │   │
+│       │   └── common
+│       │       └── PageResponse.java
+│       │
+│       ├── mapper
+│       │   ├── StudentMapper.java
+│       │   ├── CourseMapper.java
+│       │   └── FacultyMapper.java
+│       │
+│       ├── service
+│       │   ├── impl
+│       │   │   ├── StudentServiceImpl.java
+│       │   │   ├── CourseServiceImpl.java
+│       │   │   └── FacultyServiceImpl.java
+│       │   │
+│       │   ├── StudentService.java
+│       │   ├── CourseService.java
+│       │   └── FacultyService.java
+│       │
+│       ├── specification
+│       │   ├── StudentSpecification.java
+│       │   ├── CourseSpecification.java
+│       │   └── FacultySpecification.java
+│       │
+│       └── repository
+│           ├── StudentRepository.java
+│           ├── CourseRepository.java
+│           └── FacultyRepository.java
+│
+├── entity
+│   ├── Student.java
+│   ├── Course.java
+│   ├── Faculty.java
+│   ├── Department.java
+│   └── Subject.java
+│
+├── exception
+│   ├── GlobalExceptionHandler.java
+│   ├── ResourceNotFoundException.java
+│   ├── InvalidRequestException.java
+│   └── ErrorResponse.java
+│
+├── config
+│   ├── SwaggerConfig.java
+│   ├── WebConfig.java
+│   └── AppProperties.java
+│
+├── util
+│   ├── Constants.java
+│   ├── ValidationUtils.java
+│   └── DateUtils.java
+│
+└── StudentApiApplication.java
+```
+
+---
+
+## 🧠 Why This Structure Works
+
+### 🔹 **api/v1 – Versioning at the Folder Level**
+
+* Keeps APIs organized by version.
+* Future-proof: `/v2` can coexist with `/v1` without breaking older clients.
+* Example endpoints:
+
+    * `/api/v1/students`
+    * `/api/v1/courses`
+    * `/api/v1/faculties`
+
+---
+
+### 🔹 **controller/**
+
+Each domain module (Student, Course, Faculty) has its own dedicated controller.
+
+✅ Example routes:
+
+* `/api/v1/students`
+* `/api/v1/courses`
+* `/api/v1/faculties`
+
+📁 Example: `controller/student/StudentController.java`
+Keeps the controller focused on a single responsibility.
+
+---
+
+### 🔹 **dto/request & dto/response**
+
+Separating **request** and **response** DTOs improves clarity and security.
+
+| Type                   | Purpose                           |
+| ---------------------- | --------------------------------- |
+| `StudentRequest`       | Incoming data for POST/PUT        |
+| `StudentDTO`           | Outgoing API response             |
+| `StudentSearchRequest` | Used for pagination/filter/search |
+
+✅ Clear data flow:
+**Frontend → Request DTO → Controller → Entity → Response DTO → Frontend**
+
+📘 Example common wrapper:
+
+```java
+public class PageResponse<T> {
+    private List<T> content;
+    private int page;
+    private int size;
+    private long totalElements;
+    private int totalPages;
+}
+```
+
+This standardizes pagination across all APIs.
+
+---
+
+### 🔹 **mapper/**
+
+Contains `MapStruct` mappers for converting between entities and DTOs.
+
+| Mapper          | Responsibility       |
+| --------------- | -------------------- |
+| `StudentMapper` | Student ↔ StudentDTO |
+| `CourseMapper`  | Course ↔ CourseDTO   |
+| `FacultyMapper` | Faculty ↔ FacultyDTO |
+
+Encapsulates all conversion logic in one place.
+
+---
+
+### 🔹 **service/** & **service/impl/**
+
+Separates **interfaces** from **implementations**:
+
+| Folder          | Description                    |
+| --------------- | ------------------------------ |
+| `service/`      | Defines contracts (interfaces) |
+| `service/impl/` | Implements business logic      |
+
+✅ Example:
+
+* `StudentService` → defines operations
+* `StudentServiceImpl` → contains logic using repository & mapper
+
+This improves testability and loose coupling.
+
+---
+
+### 🔹 **specification/**
+
+Holds classes for **dynamic filtering**, **search**, and **sorting** using Spring JPA Specifications.
+
+| Example Files               |
+| --------------------------- |
+| `StudentSpecification.java` |
+| `CourseSpecification.java`  |
+| `FacultySpecification.java` |
+
+Encourages reusable and composable query logic.
+
+---
+
+### 🔹 **repository/**
+
+Holds JPA repositories for data persistence.
+
+| Repository          | Entity  |
+| ------------------- | ------- |
+| `StudentRepository` | Student |
+| `CourseRepository`  | Course  |
+| `FacultyRepository` | Faculty |
+
+---
+
+### 🔹 **entity/**
+
+Contains database entity models mapped via JPA.
+
+| Entity       | Description                |
+| ------------ | -------------------------- |
+| `Student`    | Represents student records |
+| `Course`     | Represents course details  |
+| `Faculty`    | Represents faculty details |
+| `Department` | Represents departments     |
+| `Subject`    | Represents subjects        |
+
+---
+
+### 🔹 **exception/**
+
+Centralized error handling and custom exceptions.
+
+| File                        | Purpose                            |
+| --------------------------- | ---------------------------------- |
+| `GlobalExceptionHandler`    | Handles all application exceptions |
+| `ResourceNotFoundException` | Thrown when record not found       |
+| `InvalidRequestException`   | Used for invalid input cases       |
+| `ErrorResponse`             | Standardized JSON error format     |
+
+---
+
+### 🔹 **config/**
+
+Configuration files for application-wide settings.
+
+| File            | Purpose                   |
+| --------------- | ------------------------- |
+| `SwaggerConfig` | OpenAPI/Swagger setup     |
+| `WebConfig`     | CORS and Web MVC settings |
+| `AppProperties` | Custom property mappings  |
+
+---
+
+### 🔹 **util/**
+
+Reusable utility classes and constants.
+
+| File              | Purpose                           |
+| ----------------- | --------------------------------- |
+| `Constants`       | Common static messages and values |
+| `ValidationUtils` | Input validation helpers          |
+| `DateUtils`       | Date/time formatting methods      |
+
+---
+
+## ✅ Benefits of This Structure
+
+* 🧩 **Modular:** Each feature is self-contained.
+* 🚀 **Scalable:** Easy to extend new modules like Attendance, Department, etc.
+* 🧠 **Readable:** Follows clear naming and separation of concerns.
+* 🔁 **Maintainable:** Simplifies debugging and testing.
+
+---
+
+**Summary:**
+This structure follows enterprise-grade standards — clear layering, versioned APIs, reusable components, and consistent DTO management. Perfect foundation for scalable Spring Boot applications.

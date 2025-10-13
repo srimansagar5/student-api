@@ -1,7 +1,7 @@
-package com.vidyasagar.attendance.controller;
+package com.vidyasagar.attendance.api.v1.controller.faculty;
 
+import com.vidyasagar.attendance.api.v1.service.FacultyService;
 import com.vidyasagar.attendance.entity.Faculty;
-import com.vidyasagar.attendance.service.FacultyService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

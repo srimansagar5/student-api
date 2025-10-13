@@ -1,4 +1,4 @@
-package com.vidyasagar.attendance.service;
+package com.vidyasagar.attendance.api.v1.service;
 
 import com.vidyasagar.attendance.entity.Faculty;
 
