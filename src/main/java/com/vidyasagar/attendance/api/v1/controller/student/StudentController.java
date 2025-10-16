@@ -1,5 +1,6 @@
 package com.vidyasagar.attendance.api.v1.controller.student;
 
+import com.vidyasagar.attendance.api.v1.dto.request.StudentSearchRequest;
 import com.vidyasagar.attendance.api.v1.service.StudentService;
 import com.vidyasagar.attendance.api.v1.dto.response.StudentDTO;
 import jakarta.validation.Valid;
@@ -92,5 +93,11 @@ public class StudentController {
     public ResponseEntity<List<StudentDTO>> getStudentsByEmailKeyword(@PathVariable String keyword) {
         List<StudentDTO> students = studentService.findByEmailContains(keyword);
         return ResponseEntity.ok(students);
+    }
+
+    @PostMapping("/search")
+    public ResponseEntity<Page<StudentDTO>> searchStudents(@RequestBody StudentSearchRequest request) {
+        Page<StudentDTO> result = studentService.searchStudents(request);
+        return ResponseEntity.ok(result);
     }
 }

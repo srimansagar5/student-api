@@ -1,5 +1,6 @@
 package com.vidyasagar.attendance.api.v1.service;
 
+import com.vidyasagar.attendance.api.v1.dto.request.StudentSearchRequest;
 import com.vidyasagar.attendance.api.v1.dto.response.StudentDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -19,4 +20,6 @@ public interface StudentService {
     List<StudentDTO> findByEmailContains(String keyword);
 
     Page<StudentDTO> getAllStudentsPage(Pageable pageable);
+
+    Page<StudentDTO> searchStudents(StudentSearchRequest request);
 }
