@@ -1,16 +1,22 @@
 package com.vidyasagar.attendance.api.v1.service.impl;
 
+import com.vidyasagar.attendance.api.v1.dto.request.StudentSearchRequest;
 import com.vidyasagar.attendance.api.v1.service.StudentService;
+import com.vidyasagar.attendance.api.v1.specification.StudentSpecification;
 import com.vidyasagar.attendance.entity.Student;
 import com.vidyasagar.attendance.api.v1.dto.response.StudentDTO;
 import com.vidyasagar.attendance.exception.ResourceNotFoundException;
 import com.vidyasagar.attendance.api.v1.mapper.StudentMapper;
 import com.vidyasagar.attendance.api.v1.repository.StudentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.*;
+//import org.springframework.data.domain.PageRequest;
+//import org.springframework.data.domain.Pageable;
+//import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -166,5 +172,28 @@ public class StudentServiceImpl implements StudentService {
         return studentMapper.toDTOList(students);
     }
 
+    @Override
+    public Page<StudentDTO> searchStudents(StudentSearchRequest request) {
+        // Sorting
+        List<Sort.Order> sortOrders = new ArrayList<>();
+        if(request.getSorting() != null) {
+            for(StudentSearchRequest.SortField sortField: request.getSorting()) {
+                Sort.Direction direction = "desc".equalsIgnoreCase(sortField.getOrder())
+                        ? Sort.Direction.DESC
+                        : Sort.Direction.ASC;
+                sortOrders.add(new Sort.Order(direction, sortField.getColumnName()));
+            }
+        }
 
+        Pageable pageable = PageRequest.of(request.getPage(), request.getSize(), sortOrders.isEmpty() ? Sort.unsorted(): Sort.by(sortOrders));
+
+        // Build Specification
+        Specification<Student> spec = StudentSpecification.withSearchAndFilters(
+                request.getSearch(),
+                request.getFilters()
+        );
+
+        Page<Student> studentPage = studentRepository.findAll(spec, pageable);
+        return studentPage.map(studentMapper::toDTO);
+    }
 }
