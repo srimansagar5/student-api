@@ -14,11 +14,15 @@ public class Course {
     private String title;
 
     @Column(nullable = false, length = 100)
-    private int credits;
+    private Integer credits;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "student_id")
+    private Student student;
 
     // Constructor
     public Course() {}
-    public Course(String title, int credits) {
+    public Course(String title, Integer credits) {
         this.credits = credits;
         this.title = title;
     }
@@ -30,6 +34,9 @@ public class Course {
     public String getTitle() { return  title;}
     public void setTitle(String title) {this.title = title;}
 
-    public int getCredits() {return  credits;}
-    public void setCredits(int credits) { this.credits = credits;}
+    public Integer getCredits() {return  credits;}
+    public void setCredits(Integer credits) { this.credits = credits;}
+
+    public Student getStudent() { return  student;}
+    public void setStudent(Student student) { this.student = student;}
 }

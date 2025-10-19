@@ -3,6 +3,9 @@ package com.vidyasagar.attendance.entity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Table(name = "student2s")
 public class Student {
@@ -11,23 +14,20 @@ public class Student {
     @GeneratedValue(strategy = GenerationType.IDENTITY) // auto-increment
     private Long id;
 
-  //  @NotBlank(message = "Name is required")
-  //  @Size(min = 2, max = 100, message = "Name should be between 2 and 100 characters")
     @Column(nullable = false, length = 100)
     private String name;
 
-  //  @NotBlank(message = "Email is required")
-  //  @Email(message = "Please enter a valid email address")
     @Column(unique = true, nullable = false)
     private String email;
 
- //   @Min(value = 18, message = "Age must be at least 18")
-  //  @Max(value = 60, message = "Age must not exceed 60")
     @Column(nullable = true, length = 100)
     private Integer age;
 
     @Column(nullable = true, length = 150)
     private String password;
+
+    @OneToMany(mappedBy = "student", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Course> courses = new ArrayList<>();
 
     //Constructor
     public Student() {}
@@ -54,4 +54,7 @@ public class Student {
 
     public String getPassword() {return password;}
     public void setPassword(String password) {this.password = password;}
+
+    public List<Course> getCourses() { return courses;}
+    public void setCourses(List<Course> courses) { this.courses = courses;}
 }

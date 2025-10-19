@@ -1,5 +1,6 @@
 package com.vidyasagar.attendance.api.v1.controller.course;
 
+import com.vidyasagar.attendance.api.v1.dto.response.CourseDTO;
 import com.vidyasagar.attendance.api.v1.service.CourseService;
 import com.vidyasagar.attendance.entity.Course;
 import org.slf4j.Logger;
@@ -30,34 +31,33 @@ public class CourseController {
     }
 
     @PostMapping
-    public ResponseEntity<Course> createCourse(@RequestBody Course course) {
-        logger.info("Creating new course: {}", course.getTitle());
-        Course saveCourse = courseService.saveCourse(course);
+    public ResponseEntity<CourseDTO> createCourse(@RequestBody CourseDTO courseDTO) {
+        CourseDTO saved = courseService.saveCourse(courseDTO);
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest()
                 .path("/{id}")
-                .buildAndExpand(saveCourse.getId())
+                .buildAndExpand(saved.getId())
                 .toUri();
         return ResponseEntity
                 .created(location)
-                .body(saveCourse);
+                .body(saved);
     }
 
     @GetMapping
-    public ResponseEntity<List<Course>> getAllCourses() {
-        List<Course> courses = courseService.getAllCourses();
+    public ResponseEntity<List<CourseDTO>> getAllCourses() {
+        List<CourseDTO> courses = courseService.getAllCourses();
         return ResponseEntity.ok(courses);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Course> getCourseById(@PathVariable Long id) {
-        Course course = courseService.getCourseById(id);
+    public ResponseEntity<CourseDTO> getCourseById(@PathVariable Long id) {
+        CourseDTO course = courseService.getCourseById(id);
         return ResponseEntity.ok(course);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Course> updateCourse(@PathVariable Long id, @RequestBody Course courseDetails) {
-        Course updateCourse  = courseService.updateCourse(id, courseDetails);
+    public ResponseEntity<CourseDTO> updateCourse(@PathVariable Long id, @RequestBody CourseDTO courseDetails) {
+        CourseDTO updateCourse  = courseService.updateCourse(id, courseDetails);
 
         return ResponseEntity
                 .status(HttpStatus.OK)
