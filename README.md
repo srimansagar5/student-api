@@ -2549,3 +2549,150 @@ Copy code
 - Commit and push — GitHub will render it beautifully  
 
 Would you like me to add a **cover title section** (like a banner title: “Attendance API – Student + Course Module Refactor”) at the top to make it look professional?
+
+
+
+Here’s your polished **`README.md`** document for the **Swagger / OpenAPI Setup in Spring Boot**:
+
+---
+
+# 🧭 Swagger / OpenAPI Setup in Spring Boot
+
+## 🎯 Objective
+
+Enable **automatic API documentation** using **Swagger (OpenAPI)** for your Spring Boot backend.
+This setup allows you and your team to **view**, **test**, and **share** your REST APIs interactively through a user-friendly web interface.
+
+---
+
+## 🧩 Steps to Implement
+
+### **1. Add Dependency**
+
+If you are using **Maven**, add the following dependency to your `pom.xml`:
+
+```xml
+<dependency>
+    <groupId>org.springdoc</groupId>
+    <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+    <version>2.8.13</version>
+</dependency>
+```
+
+✅ This includes both **OpenAPI (Swagger)** and **Swagger UI** for **Spring Boot 3+**.
+
+---
+
+### **2. Create Configuration Class** *(Optional but Recommended)*
+
+You can create a configuration class to customize your API documentation details.
+
+**File:** `SwaggerConfig.java`
+
+```java
+package com.vidyasagar.attendance.config;
+
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.info.Contact;
+import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.info.License;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class SwaggerConfig {
+
+    @Bean
+    public OpenAPI customOpenAPI() {
+        return new OpenAPI()
+                .info(new Info()
+                        .title("Student Attendance API")
+                        .description("API documentation for Attendance Management System")
+                        .version("v1.0.0")
+                        .contact(new Contact()
+                                .name("Vidya Sagar")
+                                .email("vidyasagar@example.com")
+                                .url("https://github.com/vidyasagar"))
+                        .license(new License().name("Apache 2.0").url("https://springdoc.org")));
+    }
+}
+```
+
+---
+
+### **3. Run Your Application**
+
+Run your Spring Boot application as usual.
+
+Then open the following URLs in your browser:
+
+| URL                                                                            | Description                                |
+| ------------------------------------------------------------------------------ | ------------------------------------------ |
+| [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html) | Swagger UI (Interactive API Documentation) |
+| [http://localhost:8080/v3/api-docs](http://localhost:8080/v3/api-docs)         | OpenAPI JSON Specification                 |
+
+---
+
+### **4. Verify**
+
+Once your app is running and Swagger is set up successfully, you should see:
+
+* ✅ All your controllers and endpoints automatically listed.
+* ✅ Ability to **try out APIs** directly from the Swagger UI.
+* ✅ Schemas generated from your models (`@Entity`, `@RequestBody`, etc.).
+
+---
+
+## 🧪 Exercises
+
+| Step   | Task                                                 | Expected Result                       |
+| ------ | ---------------------------------------------------- | ------------------------------------- |
+| Step 1 | Add `springdoc-openapi-starter-webmvc-ui` dependency | ✅ Build success                       |
+| Step 2 | Create `SwaggerConfig.java`                          | ✅ API info appears in Swagger UI      |
+| Step 3 | Run app and open `/swagger-ui.html`                  | ✅ Interactive API docs visible        |
+| Step 4 | Test any endpoint (e.g., `GET /students`)            | ✅ Request executes successfully in UI |
+
+---
+
+## 🧠 Bonus Tips
+
+* You can **group APIs by version** using `@OpenAPIDefinition`.
+* To **hide specific APIs**, use the annotation `@Hidden` at controller or method level.
+* You can **customize Swagger paths** in your `application.yml`:
+
+```yaml
+springdoc:
+  swagger-ui:
+    path: /api-docs
+  api-docs:
+    path: /v3/api-docs
+```
+
+Then access Swagger UI at:
+👉 [http://localhost:8080/api-docs](http://localhost:8080/api-docs)
+
+---
+
+## ⚙️ Troubleshooting
+
+If Swagger UI does not load or throws a version mismatch error:
+
+* Ensure your **Spring Boot version** and **springdoc version** are compatible.
+* Clear build cache:
+
+  ```
+  mvn clean install
+  ```
+* Restart your IDE or application server.
+
+---
+
+## 📚 References
+
+* [SpringDoc OpenAPI Documentation](https://springdoc.org/)
+* [Swagger UI GitHub Repository](https://github.com/swagger-api/swagger-ui)
+
+---
+
+Would you like me to format this into a Markdown file with emoji styling and section dividers (like professional GitHub project READMEs)?
+I can generate a downloadable `README.md` file version for you.
