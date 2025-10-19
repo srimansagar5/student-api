@@ -1,6 +1,7 @@
 package com.vidyasagar.attendance.api.v1.service.impl;
 
 import com.vidyasagar.attendance.api.v1.dto.response.CourseDTO;
+import com.vidyasagar.attendance.api.v1.dto.response.StudentDTO;
 import com.vidyasagar.attendance.api.v1.mapper.CourseMapper;
 import com.vidyasagar.attendance.api.v1.repository.StudentRepository;
 import com.vidyasagar.attendance.api.v1.service.CourseService;
@@ -85,5 +86,16 @@ public class CourseServiceImpl implements CourseService {
             throw new ResourceNotFoundException("Course not found with id " + id);
         }
         courseRepository.deleteById(id);
+    }
+
+    @Override
+    public List<CourseDTO> getCoursesByStudentId(Long studentId) {
+        if(!studentRepository.existsById(studentId)) {
+            throw new ResourceNotFoundException("Student not found with id " + studentId);
+        }
+
+        List<Course> courses = courseRepository.findByStudentId(studentId);
+        return courseMapper.toDTOList(courses);
+
     }
 }
