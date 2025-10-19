@@ -2267,3 +2267,285 @@ JPA Mapping	Implemented One-to-Many & Many-to-One relationship
 DTO & Mapper	Introduced CourseDTO + MapStruct for clean conversions
 CRUD APIs	Created, Read, Updated, and Deleted Courses via REST
 Serialization Fix	Eliminated circular JSON dependency between Student ↔ Course
+
+
+# 📘 Week 3 – Day 21
+### **Topic:** Project Refactor — Student + Course API
+### **Focus:** Improve endpoints, DTOs, validation, relationships; test with Postman
+
+---
+
+## 🧩 Overview
+
+This day focused on **project refactoring and integration improvements** for the **Student** and **Course** modules.  
+The goal was to make the API cleaner, more consistent, and ready for production standards.
+
+### ✅ Refactor Objectives Achieved
+- Organized API structure under `/api/v1/`
+- Strengthened DTO validation and mappings
+- Established **Student–Course** relationship (One Student → Many Courses)
+- Enhanced pagination, sorting, and filter functionality
+- Verified all endpoints via Postman
+
+---
+
+## 🧱 Project Structure (Refactored)
+
+com.vidyasagar.attendance
+│
+├── api
+│ └── v1
+│ ├── controller
+│ │ ├── student
+│ │ │ └── StudentController.java
+│ │ └── course
+│ │ └── CourseController.java
+│ ├── dto
+│ │ ├── request
+│ │ │ └── StudentSearchRequest.java
+│ │ └── response
+│ │ ├── StudentDTO.java
+│ │ └── CourseDTO.java
+│ ├── mapper
+│ │ ├── StudentMapper.java
+│ │ └── CourseMapper.java
+│ ├── repository
+│ │ ├── StudentRepository.java
+│ │ └── CourseRepository.java
+│ ├── service
+│ │ ├── StudentService.java
+│ │ ├── CourseService.java
+│ │ └── impl
+│ │ ├── StudentServiceImpl.java
+│ │ └── CourseServiceImpl.java
+│ └── specification
+│ └── StudentSpecification.java
+│
+├── entity
+│ ├── Student.java
+│ └── Course.java
+│
+├── exception
+│ ├── GlobalExceptionHandler.java
+│ └── ResourceNotFoundException.java
+│
+└── StudentApiApplication.java
+
+yaml
+Copy code
+
+---
+
+## 🧠 Entity Relationship Diagram (ERD)
+
+```mermaid
+erDiagram
+    STUDENT {
+        bigint id PK
+        varchar name
+        varchar email
+        int age
+        varchar password
+    }
+
+    COURSE {
+        bigint id PK
+        varchar title
+        int credits
+        bigint student_id FK
+    }
+
+    STUDENT ||--o{ COURSE : "enrolled in"
+✅ Meaning:
+
+One Student can have multiple Courses.
+
+Each Course references one Student (student_id foreign key).
+
+🔗 Visual API Reference Table
+Module	Method	Endpoint	Description
+Student	GET	/api/v1/students	Fetch all students
+GET	/api/v1/students/pages	Get paginated student list
+GET	/api/v1/students/{id}	Get student by ID
+POST	/api/v1/students	Create a new student
+PUT	/api/v1/students/{id}	Update existing student
+DELETE	/api/v1/students/{id}	Delete a student
+GET	/api/v1/students/name/{name}	Find student by name
+GET	/api/v1/students/age/{age}	Find students older than specified age
+GET	/api/v1/students/email/{keyword}	Search by email substring
+POST	/api/v1/students/search	Search students with pagination + filters
+GET	/api/v1/students/{id}/courses	Get all courses for a student
+Course	GET	/api/v1/courses	Fetch all courses
+GET	/api/v1/courses/{id}	Get course by ID
+POST	/api/v1/courses	Create a new course (assign studentId)
+PUT	/api/v1/courses/{id}	Update course details
+DELETE	/api/v1/courses/{id}	Delete course
+GET	/api/v1/courses/course-welcome	Course service test endpoint
+
+🧩 DTOs and Validation
+StudentDTO.java
+java
+Copy code
+@NotNull(message = "Name cannot be null")
+@Size(min = 3, max = 50, message = "Name must be between 3 and 50 characters")
+private String name;
+
+@NotNull(message = "Email cannot be null")
+@Email(message = "Email should be valid")
+private String email;
+
+@Min(value = 18, message = "Age must be at least 18")
+@Max(value = 60, message = "Age must not exceed 60")
+@NotNull(message = "Age cannot be null")
+private Integer age;
+✅ Validation handled via @Valid in controller methods.
+✅ Errors captured globally in GlobalExceptionHandler.
+
+⚙️ Refactored Service Logic
+CourseServiceImpl.java
+java
+Copy code
+@Override
+public CourseDTO saveCourse(CourseDTO courseDTO) {
+    Course course = courseMapper.toEntity(courseDTO);
+    if(courseDTO.getStudentId() != null) {
+        Student student = studentRepository.findById(courseDTO.getStudentId())
+                .orElseThrow(() -> new ResourceNotFoundException("Student not found"));
+        course.setStudent(student);
+    }
+    Course saved = courseRepository.save(course);
+    return courseMapper.toDTO(saved);
+}
+✅ Links Course with Student on save.
+✅ Ensures Student existence validation before linking.
+
+StudentServiceImpl.java
+java
+Copy code
+@Override
+public Page<StudentDTO> searchStudents(StudentSearchRequest request) {
+    List<Sort.Order> sortOrders = new ArrayList<>();
+    if(request.getSorting() != null) {
+        for(StudentSearchRequest.SortField sortField: request.getSorting()) {
+            Sort.Direction direction = "desc".equalsIgnoreCase(sortField.getOrder())
+                    ? Sort.Direction.DESC : Sort.Direction.ASC;
+            sortOrders.add(new Sort.Order(direction, sortField.getColumnName()));
+        }
+    }
+
+    Pageable pageable = PageRequest.of(
+        request.getPage(), 
+        request.getSize(), 
+        sortOrders.isEmpty() ? Sort.unsorted() : Sort.by(sortOrders)
+    );
+
+    Specification<Student> spec = StudentSpecification.withSearchAndFilters(
+            request.getSearch(), request.getFilters()
+    );
+
+    Page<Student> studentPage = studentRepository.findAll(spec, pageable);
+    return studentPage.map(studentMapper::toDTO);
+}
+✅ Combines sorting, search, and filtering into one clean query.
+✅ Uses Specification for flexible criteria logic.
+
+🌐 Sample Postman Tests
+✅ Create Student
+POST /api/v1/students
+
+json
+Copy code
+{
+  "name": "John",
+  "email": "john@gmail.com",
+  "age": 22
+}
+Response
+
+json
+Copy code
+{
+  "id": 1,
+  "name": "John",
+  "email": "john@gmail.com",
+  "age": 22
+}
+✅ Create Course for Student
+POST /api/v1/courses
+
+json
+Copy code
+{
+  "title": "Spring Boot Basics",
+  "credits": 4,
+  "studentId": 1
+}
+Response
+
+json
+Copy code
+{
+  "id": 10,
+  "title": "Spring Boot Basics",
+  "credits": 4,
+  "studentId": 1,
+  "studentName": "John"
+}
+✅ Fetch Student Courses
+GET /api/v1/students/1/courses
+
+json
+Copy code
+[
+  {
+    "id": 10,
+    "title": "Spring Boot Basics",
+    "credits": 4,
+    "studentId": 1,
+    "studentName": "John"
+  }
+]
+✅ Search Students
+POST /api/v1/students/search
+
+json
+Copy code
+{
+  "page": 0,
+  "size": 5,
+  "sorting": [{ "columnName": "name", "order": "asc" }],
+  "search": "John",
+  "filters": { "age": 22 }
+}
+🧾 Summary
+Category	Improvement
+Controllers	Versioned, RESTful structure
+DTO Layer	Validation + clean response
+Mapping Layer	MapStruct integration for DTO conversions
+Relationships	Verified One-to-Many Student → Course
+Service Layer	Clear separation of concerns
+Repositories	Derived queries + JPQL
+Testing	Fully verified via Postman
+Search/Filter	Dynamic, specification-based
+
+🧠 Learning Outcomes
+After completing Week 3, you can:
+
+✅ Design multi-entity REST APIs with relationships
+✅ Implement DTO conversion and validation
+✅ Write reusable service logic
+✅ Build search and filter features using Spring Data JPA Specification
+✅ Maintain clear project structure with versioned APIs
+
+pgsql
+Copy code
+
+---
+
+✅ **Instructions:**  
+- Copy all content inside the **gray box above**  
+- Paste it directly into your `README.md` file in IntelliJ  
+- Enable **Markdown Preview** (click the preview icon or press `Ctrl + Shift + V`)  
+- Commit and push — GitHub will render it beautifully  
+
+Would you like me to add a **cover title section** (like a banner title: “Attendance API – Student + Course Module Refactor”) at the top to make it look professional?
