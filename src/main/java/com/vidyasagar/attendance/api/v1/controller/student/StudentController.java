@@ -1,7 +1,10 @@
 package com.vidyasagar.attendance.api.v1.controller.student;
 
 import com.vidyasagar.attendance.api.v1.dto.request.StudentSearchRequest;
+import com.vidyasagar.attendance.api.v1.dto.response.CourseDTO;
 import com.vidyasagar.attendance.api.v1.service.StudentService;
+import com.vidyasagar.attendance.api.v1.service.CourseService;
+
 import com.vidyasagar.attendance.api.v1.dto.response.StudentDTO;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -20,10 +23,11 @@ import java.util.List;
 @RequestMapping("/api/v1/students")
 public class StudentController {
     private final StudentService studentService;
-
+    private final CourseService courseService;
     // Constructor Injection
-    public  StudentController(StudentService studentService) {
+    public  StudentController(StudentService studentService, CourseService courseService) {
         this.studentService = studentService;
+        this.courseService = courseService;
     }
 
     @GetMapping("/hello-student")
@@ -99,5 +103,11 @@ public class StudentController {
     public ResponseEntity<Page<StudentDTO>> searchStudents(@RequestBody StudentSearchRequest request) {
         Page<StudentDTO> result = studentService.searchStudents(request);
         return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/{id}/courses")
+    public ResponseEntity<List<CourseDTO>> getCoursesByStudent(@PathVariable Long id) {
+        List<CourseDTO> courses = courseService.getCoursesByStudentId(id);
+        return ResponseEntity.ok(courses);
     }
 }
