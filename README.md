@@ -1998,3 +1998,272 @@ Reusable utility classes and constants.
 
 **Summary:**
 This structure follows enterprise-grade standards — clear layering, versioned APIs, reusable components, and consistent DTO management. Perfect foundation for scalable Spring Boot applications.
+
+
+
+📘 Week 3 – Day 19
+Topic: Add Related Entity – Course
+Focus: One Student → Many Courses + CRUD using DTO
+🧩 Overview
+
+Today’s focus was on expanding the existing Student API by adding a related entity — Course — and implementing a One-to-Many relationship between Student and Course.
+
+Each student can be linked to multiple courses, but each course belongs to only one student.
+We also implemented DTO mapping for Course to maintain clean JSON structures and avoid infinite recursion during serialization.
+
+🧱 Database Schema
+Student Table (student2s)
+Column	Type	Constraints
+id	bigint	Primary Key, Auto Increment
+name	varchar(100)	Not Null
+email	varchar(255)	Not Null
+age	int	Not Null
+password	varchar(150)	Optional
+Course Table (course)
+Column	Type	Constraints
+id	bigint	Primary Key, Auto Increment
+title	varchar(100)	Not Null
+credits	int	Optional
+student_id	bigint	Foreign Key → student2s(id)
+🧠 Entity Relationship
+
+Relationship:
+
+One Student → Many Courses
+Each Course → Belongs to one Student
+
+Student.java
+@OneToMany(mappedBy = "student", cascade = CascadeType.ALL, orphanRemoval = true)
+@JsonManagedReference
+private List<Course> courses = new ArrayList<>();
+
+Course.java
+@ManyToOne(fetch = FetchType.LAZY)
+@JoinColumn(name = "student_id")
+@JsonBackReference
+private Student student;
+
+
+✅ Why:
+@JsonManagedReference and @JsonBackReference prevent infinite JSON recursion between Student and Course.
+
+🧩 DTO Layer
+
+To maintain a clean API structure and prevent exposing JPA entities directly,
+we used CourseDTO for all request/response data.
+
+CourseDTO.java
+public class CourseDTO {
+private Long id;
+private String title;
+private Integer credits;
+private Long studentId;
+private String studentName;
+}
+
+⚙️ Mapper Layer (MapStruct Integration)
+CourseMapper.java
+@Mapper(componentModel = "spring")
+public interface CourseMapper {
+
+    @Mappings({
+        @Mapping(source = "student.id", target = "studentId"),
+        @Mapping(source = "student.name", target = "studentName")
+    })
+    CourseDTO toDTO(Course course);
+
+    @Mappings({
+        @Mapping(source = "studentId", target = "student.id")
+    })
+    Course toEntity(CourseDTO courseDTO);
+
+    List<CourseDTO> toDTOList(List<Course> courses);
+}
+
+
+✅ Automatically maps between Entity ↔ DTO using MapStruct.
+✅ Simplifies conversion logic in service layer.
+
+💼 Service Layer
+CourseService.java
+public interface CourseService {
+String getCourseWelcomeMessage();
+CourseDTO saveCourse(CourseDTO courseDTO);
+List<CourseDTO> getAllCourses();
+CourseDTO getCourseById(Long id);
+CourseDTO updateCourse(Long id, CourseDTO courseDTO);
+void deleteCourse(Long id);
+}
+
+CourseServiceImpl.java
+@Service
+public class CourseServiceImpl implements CourseService {
+
+    private final CourseRepository courseRepository;
+    private final StudentRepository studentRepository;
+    private final CourseMapper courseMapper;
+
+    public CourseServiceImpl(CourseRepository courseRepository, 
+                             StudentRepository studentRepository, 
+                             CourseMapper courseMapper) {
+        this.courseRepository = courseRepository;
+        this.studentRepository = studentRepository;
+        this.courseMapper = courseMapper;
+    }
+
+    @Override
+    public CourseDTO saveCourse(CourseDTO courseDTO) {
+        Course course = courseMapper.toEntity(courseDTO);
+
+        if (courseDTO.getStudentId() != null) {
+            Student student = studentRepository.findById(courseDTO.getStudentId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Student not found"));
+            course.setStudent(student);
+        }
+
+        Course saved = courseRepository.save(course);
+        return courseMapper.toDTO(saved);
+    }
+
+    @Override
+    public List<CourseDTO> getAllCourses() {
+        return courseMapper.toDTOList(courseRepository.findAll());
+    }
+
+    @Override
+    public CourseDTO getCourseById(Long id) {
+        Course course = courseRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Course not found with id " + id));
+        return courseMapper.toDTO(course);
+    }
+
+    @Override
+    public CourseDTO updateCourse(Long id, CourseDTO courseDTO) {
+        Course course = courseRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Course not found with id " + id));
+
+        course.setTitle(courseDTO.getTitle());
+        course.setCredits(courseDTO.getCredits());
+
+        if (courseDTO.getStudentId() != null) {
+            Student student = studentRepository.findById(courseDTO.getStudentId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Student not found"));
+            course.setStudent(student);
+        }
+
+        Course updated = courseRepository.save(course);
+        return courseMapper.toDTO(updated);
+    }
+
+    @Override
+    public void deleteCourse(Long id) {
+        if (!courseRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Course not found with id " + id);
+        }
+        courseRepository.deleteById(id);
+    }
+
+    @Override
+    public String getCourseWelcomeMessage() {
+        return "Welcome to Course Section";
+    }
+}
+
+🧭 Controller Layer
+CourseController.java
+@RestController
+@RequestMapping("/api/v1/courses")
+public class CourseController {
+
+    private final CourseService courseService;
+
+    public CourseController(CourseService courseService) {
+        this.courseService = courseService;
+    }
+
+    @PostMapping
+    public ResponseEntity<CourseDTO> createCourse(@RequestBody CourseDTO courseDTO) {
+        CourseDTO saved = courseService.saveCourse(courseDTO);
+        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<CourseDTO>> getAllCourses() {
+        return ResponseEntity.ok(courseService.getAllCourses());
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<CourseDTO> getCourseById(@PathVariable Long id) {
+        return ResponseEntity.ok(courseService.getCourseById(id));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<CourseDTO> updateCourse(@PathVariable Long id,
+                                                  @RequestBody CourseDTO courseDTO) {
+        return ResponseEntity.ok(courseService.updateCourse(id, courseDTO));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteCourse(@PathVariable Long id) {
+        courseService.deleteCourse(id);
+        return ResponseEntity.noContent().build();
+    }
+}
+
+🌐 API Endpoints
+Method	Endpoint	Description
+POST	/api/v1/courses	Create a new course
+GET	/api/v1/courses	Fetch all courses
+GET	/api/v1/courses/{id}	Fetch a single course by ID
+PUT	/api/v1/courses/{id}	Update course details
+DELETE	/api/v1/courses/{id}	Delete a course by ID
+🧪 Example Request & Response
+POST /api/v1/courses
+
+Request:
+
+{
+"title": "Spring Boot Basics",
+"credits": 4,
+"studentId": 1
+}
+
+
+Response:
+
+{
+"id": 10,
+"title": "Spring Boot Basics",
+"credits": 4,
+"studentId": 1,
+"studentName": "John"
+}
+
+GET /api/v1/courses
+
+Response:
+
+[
+{
+"id": 10,
+"title": "Spring Boot Basics",
+"credits": 4,
+"studentId": 1,
+"studentName": "John"
+},
+{
+"id": 11,
+"title": "React Fundamentals",
+"credits": 3,
+"studentId": 2,
+"studentName": "Robert"
+}
+]
+
+✅ Outcome of the Day
+Area	Achievement
+Entity Design	Created Course entity with a foreign key to Student
+JPA Mapping	Implemented One-to-Many & Many-to-One relationship
+DTO & Mapper	Introduced CourseDTO + MapStruct for clean conversions
+CRUD APIs	Created, Read, Updated, and Deleted Courses via REST
+Serialization Fix	Eliminated circular JSON dependency between Student ↔ Course
