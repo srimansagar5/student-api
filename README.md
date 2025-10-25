@@ -3053,4 +3053,202 @@ Example Screenshot caption:
 
 ---
 
-Would you like me to generate the **README.md section** for this “Add Teacher Entity” feature (with Swagger screenshot placeholders and description in your project documentation format)?
+
+Excellent, Vidya 👏 — moving right along to **Week 4 Day 24**, which is all about securing your backend.
+
+Let’s set up **Basic Authentication** with **Spring Security** in your existing Spring Boot 3.5.6 project so that only authenticated users can access protected endpoints like `/api/v1/teachers` or `/api/v1/students`.
+
+---
+
+## 🧭 **Topic:** Basic Authentication Setup
+
+### 🎯 **Objective**
+
+Introduce Spring Security Basic Auth, protect REST endpoints, and test login with username + password.
+
+---
+
+## 🧩 **Exercises Breakdown**
+
+### 1️⃣ Add Dependency
+
+Add this to your `pom.xml` (Spring Security Starter):
+
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-security</artifactId>
+</dependency>
+```
+
+Then rebuild your project.
+
+---
+
+### 2️⃣ Configure Security
+
+Create a new config class:
+
+**`SecurityConfig.java`**
+
+```java
+package com.vidyasagar.attendance.config;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+import org.springframework.security.web.SecurityFilterChain;
+
+@Configuration
+public class SecurityConfig {
+
+    // ✅ Define in-memory users
+    @Bean
+    public UserDetailsService userDetailsService(PasswordEncoder encoder) {
+        UserDetails admin = User.withUsername("admin")
+                .password(encoder.encode("admin123"))
+                .roles("ADMIN")
+                .build();
+
+        UserDetails faculty = User.withUsername("faculty")
+                .password(encoder.encode("faculty123"))
+                .roles("FACULTY")
+                .build();
+
+        return new InMemoryUserDetailsManager(admin, faculty);
+    }
+
+    // ✅ Password encoder (BCrypt)
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    // ✅ Configure HTTP security
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+            // enable basic auth
+            .httpBasic(Customizer.withDefaults())
+            // authorize requests
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll() // open docs
+                .requestMatchers("/api/v1/students/**").hasAnyRole("ADMIN", "FACULTY")
+                .requestMatchers("/api/v1/teachers/**").hasRole("ADMIN")
+                .anyRequest().authenticated()
+            )
+            // disable csrf for REST APIs
+            .csrf(csrf -> csrf.disable());
+
+        return http.build();
+    }
+}
+```
+
+---
+
+### 3️⃣ Configure Default Credentials (Optional for Testing)
+
+You can also use properties instead of in-memory configuration.
+
+Add to `application.properties` (optional alternative):
+
+```properties
+spring.security.user.name=admin
+spring.security.user.password=admin123
+```
+
+If this property exists, Spring will auto-configure a default user.
+
+---
+
+### 4️⃣ Run and Test
+
+Start your Spring Boot app.
+Now when you try to access an endpoint (e.g., [http://localhost:8080/api/v1/teachers](http://localhost:8080/api/v1/teachers)), the browser or client will prompt for login credentials.
+
+#### 🔑 Example
+
+| Username  | Password     | Role    |
+| --------- | ------------ | ------- |
+| `admin`   | `admin123`   | ADMIN   |
+| `faculty` | `faculty123` | FACULTY |
+
+---
+
+### 5️⃣ Test via Tools
+
+#### 🧪 Using Swagger UI
+
+* Go to [http://localhost:8080/swagger-ui/index.html](http://localhost:8080/swagger-ui/index.html)
+* Click the **“Authorize”** button 🔒 (top right).
+* Enter:
+
+  ```
+  Username: admin
+  Password: admin123
+  ```
+* Click “Authorize” → “Close”.
+* Now all protected endpoints will execute successfully.
+
+#### 🧪 Using Curl
+
+```bash
+curl -u admin:admin123 http://localhost:8080/api/v1/teachers
+```
+
+#### 🧪 Using Postman
+
+* In the “Authorization” tab, select **Basic Auth**
+* Enter username/password → “Send”
+
+---
+
+### 6️⃣ Verify Role Restrictions
+
+| Endpoint                            | Allowed Roles  |
+| ----------------------------------- | -------------- |
+| `/api/v1/teachers/**`               | ADMIN only     |
+| `/api/v1/students/**`               | ADMIN, FACULTY |
+| `/swagger-ui/**`, `/v3/api-docs/**` | Public         |
+
+---
+
+## 💡 Optional Enhancements
+
+1. **Move to Database-backed users**
+
+    * Later you can replace `InMemoryUserDetailsManager` with a `User` entity + JPA repository.
+
+2. **Use @PreAuthorize**
+
+    * Annotate controller methods with role-based access:
+
+      ```java
+      @PreAuthorize("hasRole('ADMIN')")
+      public ResponseEntity<?> deleteTeacher(...) { ... }
+      ```
+
+3. **Return custom error messages**
+
+    * Implement `@ControllerAdvice` or `AuthenticationEntryPoint` to customize unauthorized responses.
+
+---
+
+## ✅ **Expected Behavior**
+
+| Action                                  | Result           |
+| --------------------------------------- | ---------------- |
+| Access `/api/v1/teachers` without login | 401 Unauthorized |
+| Access `/api/v1/teachers` as `admin`    | 200 OK           |
+| Access `/api/v1/students` as `faculty`  | 200 OK           |
+| Access `/api/v1/teachers` as `faculty`  | 403 Forbidden    |
+
+---

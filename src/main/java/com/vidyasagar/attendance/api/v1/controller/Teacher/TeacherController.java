@@ -6,6 +6,7 @@ import com.vidyasagar.attendance.api.v1.service.TeacherService;
 import com.vidyasagar.attendance.entity.Teacher;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -51,6 +52,7 @@ public class TeacherController {
         return ResponseEntity.status(HttpStatus.OK).body(teacherResponseDTO);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteTeacher(@PathVariable Long id) {
         teacherService.deleteTeacher(id);
