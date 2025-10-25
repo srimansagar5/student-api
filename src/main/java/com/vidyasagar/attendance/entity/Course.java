@@ -20,6 +20,10 @@ public class Course {
     @JoinColumn(name = "student_id")
     private Student student;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "teacher_id")
+    private Teacher teacher;
+
     // Constructor
     public Course() {}
     public Course(String title, Integer credits) {
@@ -39,4 +43,7 @@ public class Course {
 
     public Student getStudent() { return  student;}
     public void setStudent(Student student) { this.student = student;}
+
+    public Teacher getTeacher() { return teacher; }
+    public void setTeacher(Teacher teacher) { this.teacher = teacher; }
 }
