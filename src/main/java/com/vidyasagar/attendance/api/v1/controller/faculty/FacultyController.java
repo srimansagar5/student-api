@@ -1,7 +1,9 @@
 package com.vidyasagar.attendance.api.v1.controller.faculty;
 
+import com.vidyasagar.attendance.api.v1.dto.response.FacultyDTO;
 import com.vidyasagar.attendance.api.v1.service.FacultyService;
 import com.vidyasagar.attendance.entity.Faculty;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,48 +17,39 @@ import java.util.List;
 public class FacultyController {
     private final FacultyService facultyService;
 
-    // Constructor Injection
     public FacultyController(FacultyService facultyService) {
         this.facultyService = facultyService;
     }
 
-    //Then your endpoints become /api/faculty, /api/hello-faculty, etc.
-    @GetMapping("hello-faculty")
+    @GetMapping("/hello-faculty")
     public String getFacultyMessage() {
-        return  facultyService.getFacultyMessage();
+        return facultyService.getFacultyMessage();
     }
 
     @PostMapping
-    public ResponseEntity<Faculty> createFaculty(@RequestBody Faculty faculty) {
-        Faculty savedFaculty = facultyService.saveFaculty(faculty);
-        URI location = ServletUriComponentsBuilder
-                .fromCurrentRequest()
+    public ResponseEntity<FacultyDTO> createFaculty(@Valid @RequestBody FacultyDTO facultyDTO) {
+        FacultyDTO saved = facultyService.saveFaculty(facultyDTO);
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{id}")
-                .buildAndExpand(savedFaculty.getId())
+                .buildAndExpand(saved.getId())
                 .toUri();
-
-        return ResponseEntity
-                .created(location)
-                .body(savedFaculty);
+        return ResponseEntity.created(location).body(saved);
     }
 
     @GetMapping
-    public ResponseEntity<List<Faculty>> getAllFaculty() {
-        List<Faculty> faculties =  facultyService.getAllFaculty();
-        return ResponseEntity.ok(faculties);
+    public ResponseEntity<List<FacultyDTO>> getAllFaculty() {
+        return ResponseEntity.ok(facultyService.getAllFaculty());
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Faculty> updateFaculty(@PathVariable Long id, @RequestBody Faculty facultyDetails) {
-        Faculty updatedFaculty = facultyService.updateFaculty(id, facultyDetails);
-
-        return ResponseEntity
-                .status(HttpStatus.OK) // HTTP 200
-                .body(updatedFaculty);
+    public ResponseEntity<FacultyDTO> updateFaculty(@PathVariable Long id, @Valid @RequestBody FacultyDTO facultyDTO) {
+        FacultyDTO updated = facultyService.updateFaculty(id, facultyDTO);
+        return ResponseEntity.ok(updated);
     }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteFaculty(@PathVariable Long id) {
         facultyService.deleteFaculty(id);
-        return ResponseEntity.noContent().build(); // HTTP 204
+        return ResponseEntity.noContent().build();
     }
 }

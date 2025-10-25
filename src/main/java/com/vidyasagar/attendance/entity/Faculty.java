@@ -1,6 +1,8 @@
 package com.vidyasagar.attendance.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 
 @Entity
 @Table(name="faculty")
@@ -11,12 +13,15 @@ public class Faculty {
     private Long id;
 
     @Column(nullable = false, length = 100)
+    @NotBlank(message = "Name is required")
     private String name;
 
     @Column(unique = true, nullable = false, length = 150)
+    @Email(message = "Enter valid email address")
     private String email;
 
     @Column(nullable = false, length = 100)
+    @NotBlank(message = "Department is required")
     private String department;
 
     //Constructor

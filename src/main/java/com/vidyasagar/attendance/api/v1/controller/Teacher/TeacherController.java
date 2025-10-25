@@ -4,6 +4,8 @@ import com.vidyasagar.attendance.api.v1.dto.request.TeacherRequestDTO;
 import com.vidyasagar.attendance.api.v1.dto.response.TeacherResponseDTO;
 import com.vidyasagar.attendance.api.v1.service.TeacherService;
 import com.vidyasagar.attendance.entity.Teacher;
+import io.swagger.v3.oas.annotations.Operation;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -36,7 +38,8 @@ public class TeacherController {
     }
 
     @PostMapping
-    public ResponseEntity<TeacherResponseDTO> createTeacher(@RequestBody TeacherRequestDTO teacherRequestDTO) {
+    @Operation(summary = "Create new Teacher")
+    public ResponseEntity<TeacherResponseDTO> createTeacher(@Valid @RequestBody TeacherRequestDTO teacherRequestDTO) {
         TeacherResponseDTO teacherResponseDTO = teacherService.createTeacher(teacherRequestDTO);
         URI locations = ServletUriComponentsBuilder
                 .fromCurrentRequest()

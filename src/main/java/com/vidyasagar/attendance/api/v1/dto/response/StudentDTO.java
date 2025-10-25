@@ -21,7 +21,7 @@ public class StudentDTO {
     // Constructor
     public StudentDTO() {}
 
-    public StudentDTO(Long id, String name, String email, int age) {
+    public StudentDTO(Long id, String name, String email, Integer age) {
         this.id = id;
         this.name = name;
         this.email = email;
@@ -38,6 +38,6 @@ public class StudentDTO {
     public String getEmail() { return email;}
     public void setEmail(String email) { this.email = email;}
 
-    public int getAge() { return age; }
-    public void setAge(int age) {this.age = age; }
+    public Integer getAge() { return age; }
+    public void setAge(Integer age) {this.age = age; }
 }

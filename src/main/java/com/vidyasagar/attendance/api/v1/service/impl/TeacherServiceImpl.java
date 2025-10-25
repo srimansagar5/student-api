@@ -33,9 +33,9 @@ public class TeacherServiceImpl implements TeacherService {
     }
 
     public TeacherResponseDTO getTeacherById(Long id) {
-        return teacherRepository.findById(id)
-                .map(teacherMapper::toDTO)
+        Teacher teacher = teacherRepository.findWithCoursesById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Teacher not found with id " + id));
+        return teacherMapper.toDTO(teacher);
     }
 
     public TeacherResponseDTO createTeacher(TeacherRequestDTO teacherRequestDTO) {
@@ -52,8 +52,9 @@ public class TeacherServiceImpl implements TeacherService {
     }
 
     public void deleteTeacher(Long id) {
-        Teacher teacher = teacherRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Teacher not found with id " + id));
+        if(!teacherRepository.existsById(id)){
+            throw new ResourceNotFoundException("Teacher not found with id " + id);
+        }
         teacherRepository.deleteById(id);
     }
 }
