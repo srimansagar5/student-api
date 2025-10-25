@@ -39,11 +39,12 @@ public class CourseServiceImpl implements CourseService {
     public CourseDTO saveCourse(CourseDTO courseDTO) {
         Course course = courseMapper.toEntity(courseDTO);
 
-        // If student is attached, ensure it's loaded from DB(best practice)
-        if(courseDTO.getStudentId() != null) {
-            Student student = studentRepository.findById(courseDTO.getStudentId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Student not found"));
-            course.setStudent(student);
+        if (courseDTO.getStudentIds() != null && !courseDTO.getStudentIds().isEmpty()) {
+            List<Student> students = studentRepository.findAllById(courseDTO.getStudentIds());
+            if (students.isEmpty()) {
+                throw new ResourceNotFoundException("No valid students found for IDs: " + courseDTO.getStudentIds());
+            }
+            course.setStudents(students);
         }
 
         Course saved = courseRepository.save(course);
@@ -63,17 +64,16 @@ public class CourseServiceImpl implements CourseService {
     }
 
     @Override
-    public CourseDTO updateCourse(Long id, CourseDTO courseDetails){
+    public CourseDTO updateCourse(Long id, CourseDTO courseDetails) {
         Course course = courseRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Course not found with id " + id));
 
-        course.setCredits(courseDetails.getCredits());
         course.setTitle(courseDetails.getTitle());
+        course.setCredits(courseDetails.getCredits());
 
-        if(courseDetails.getStudentId() != null) {
-            Student student = studentRepository.findById(id)
-                    .orElseThrow(() -> new ResourceNotFoundException("Student not found"));
-            course.setStudent(student);
+        if (courseDetails.getStudentIds() != null && !courseDetails.getStudentIds().isEmpty()) {
+            List<Student> students = studentRepository.findAllById(courseDetails.getStudentIds());
+            course.setStudents(students);
         }
 
         Course updated = courseRepository.save(course);

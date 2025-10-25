@@ -19,6 +19,6 @@ public interface StudentRepository extends JpaRepository<Student, Long>, JpaSpec
     List<Student> findByEmailContains(String keyword);
 
     // Native SQL example
-    @Query(value = "SELECT * FROM students WHERE name ILIKE %?1%", nativeQuery = true)
+    @Query(value = "SELECT * FROM student2s WHERE name ILIKE %?1%", nativeQuery = true)
     List<Student> searchByName(String namePart);
 }

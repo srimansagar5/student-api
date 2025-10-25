@@ -17,6 +17,7 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableMethodSecurity
 public class SecurityConfig {
 
+
     // Define in-memory users
     @Bean
     public UserDetailsService userDetailsService(PasswordEncoder encoder) {
@@ -24,6 +25,7 @@ public class SecurityConfig {
                 .password(encoder.encode("admin123"))
                 .roles("ADMIN")
                 .build();
+
         UserDetails faculty = User.withUsername("faculty")
                 .password(encoder.encode("faculty123"))
                 .roles("FACULTY")
@@ -32,36 +34,42 @@ public class SecurityConfig {
         return new InMemoryUserDetailsManager(admin, faculty);
     }
 
-    // Password encoder (BCrypt)
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    // Configure HTTP security
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws  Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity
-                // enable basic auth
-                .httpBasic(Customizer.withDefaults())
-                // authorize requests
+                .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/swagger-ui", "/v3/api-docs/**").permitAll() // open docs
+                        // ✅ Permit Swagger and OpenAPI endpoints
+                        .requestMatchers(
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**",
+                                "/swagger-resources/**",
+                                "/swagger-ui.html",
+                                "/webjars/**"
+                        ).permitAll()
+                        // ✅ Allow home or health endpoints (optional)
+                        .requestMatchers("/").permitAll()
+                        // Role-based access for APIs
                         .requestMatchers("/api/v1/students/**").hasAnyRole("ADMIN", "FACULTY")
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/v1/internal/**").denyAll()
+                        // ✅ Everything else requires authentication
                         .anyRequest().authenticated()
                 )
-                // disable csrf for REST APIs
-                .csrf(csrf -> csrf.disable())
-                .headers(headers ->
-                        headers
-                                .frameOptions(frame -> frame.disable())
-                                .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self"))
-                                .xssProtection(xss -> xss.disable())
-                                .httpStrictTransportSecurity(hsts -> hsts.includeSubDomains(true).maxAgeInSeconds(31536000))
-
+                // ✅ Enable HTTP Basic Auth
+                .httpBasic(Customizer.withDefaults())
+                .headers(headers -> headers
+                        .frameOptions(frame -> frame.disable())
+                        .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'"))
+                        .xssProtection(xss -> xss.disable())
+                        .httpStrictTransportSecurity(hsts -> hsts.includeSubDomains(true).maxAgeInSeconds(31536000))
                 );
+
         return httpSecurity.build();
     }
 }

@@ -26,7 +26,12 @@ public class Student {
     @Column(nullable = true, length = 150)
     private String password;
 
-    @OneToMany(mappedBy = "student", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ManyToMany
+    @JoinTable(
+            name = "student_courses",
+            joinColumns = @JoinColumn(name = "student_id"),
+            inverseJoinColumns = @JoinColumn(name = "course_id")
+    )
     private List<Course> courses = new ArrayList<>();
 
     //Constructor

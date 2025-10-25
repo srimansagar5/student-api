@@ -2,8 +2,11 @@ package com.vidyasagar.attendance.entity;
 
 import jakarta.persistence.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
-@Table(name="course")
+@Table(name = "course")
 public class Course {
 
     @Id
@@ -13,37 +16,42 @@ public class Course {
     @Column(unique = true, nullable = false, length = 100)
     private String title;
 
-    @Column(nullable = false, length = 100)
+    @Column(nullable = false)
     private Integer credits;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "student_id")
-    private Student student;
+    @ManyToMany
+    @JoinTable(
+            name = "student_courses",
+            joinColumns = @JoinColumn(name = "course_id"),
+            inverseJoinColumns = @JoinColumn(name = "student_id")
+    )
+    private List<Student> students = new ArrayList<>();
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "teacher_id")
     private Teacher teacher;
 
-    // Constructor
+    // Constructors
     public Course() {}
     public Course(String title, Integer credits) {
-        this.credits = credits;
         this.title = title;
+        this.credits = credits;
     }
 
-    // getters and setters
-    public Long getId() { return id;}
-    public void setId(Long id) {this.id = id;}
+    // Getters and setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    public String getTitle() { return  title;}
-    public void setTitle(String title) {this.title = title;}
+    public String getTitle() { return title; }
+    public void setTitle(String title) { this.title = title; }
 
-    public Integer getCredits() {return  credits;}
-    public void setCredits(Integer credits) { this.credits = credits;}
+    public Integer getCredits() { return credits; }
+    public void setCredits(Integer credits) { this.credits = credits; }
 
-    public Student getStudent() { return  student;}
-    public void setStudent(Student student) { this.student = student;}
+    public List<Student> getStudents() { return students; }
+    public void setStudents(List<Student> students) { this.students = students; }
 
     public Teacher getTeacher() { return teacher; }
     public void setTeacher(Teacher teacher) { this.teacher = teacher; }
 }
+

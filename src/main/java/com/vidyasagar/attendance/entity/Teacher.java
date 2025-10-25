@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -18,12 +19,13 @@ public class Teacher {
     @Column(nullable = false, length = 250)
     private String name;
 
+    @NotBlank(message = "Email is required")
     @Email(message = "Please provide a valid email address")
     @Column(nullable = false, unique = true, length = 250)
     private String email;
 
-    @OneToMany(mappedBy = "teacher", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Course> courses;
+    @OneToMany(mappedBy = "teacher", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, orphanRemoval = false)
+    private List<Course> courses = new ArrayList<>();
 
     //Constructor
     public Teacher() {}
