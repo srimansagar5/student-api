@@ -2696,3 +2696,361 @@ If Swagger UI does not load or throws a version mismatch error:
 
 Would you like me to format this into a Markdown file with emoji styling and section dividers (like professional GitHub project READMEs)?
 I can generate a downloadable `README.md` file version for you.
+
+
+Excellent, Vidya 👏 — since your `Course` entity already contains the `teacher` reference, we’ll build the **complete Teacher module** with:
+
+✅ `Teacher` entity
+✅ DTOs (Request/Response)
+✅ MapStruct mapper
+✅ Service + Controller
+✅ Swagger-ready documentation summary
+✅ SQL table auto-creation in your PostgreSQL database
+
+---
+
+# 📘 Week 4 Day 23 — Add Teacher Entity
+
+### **Objective:**
+
+Create the `Teacher` entity and set up a **One-to-Many** relationship between `Teacher` and `Course`.
+Each **Teacher** can teach **many Courses**.
+
+---
+
+## 🧩 1. Entity Layer
+
+### `Teacher.java`
+
+```java
+package com.vidyasagar.attendance.entity;
+
+import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import java.util.List;
+
+@Entity
+@Table(name = "teachers")
+public class Teacher {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @NotBlank(message = "Teacher name is required")
+    @Column(nullable = false, length = 100)
+    private String name;
+
+    @Email(message = "Please provide a valid email address")
+    @Column(unique = true, length = 100)
+    private String email;
+
+    @OneToMany(mappedBy = "teacher", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Course> courses;
+
+    // Constructors
+    public Teacher() {}
+
+    public Teacher(String name, String email) {
+        this.name = name;
+        this.email = email;
+    }
+
+    // Getters and setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+
+    public List<Course> getCourses() { return courses; }
+    public void setCourses(List<Course> courses) { this.courses = courses; }
+}
+```
+
+✅ When you start your application, JPA will **automatically create a `teachers` table** with columns:
+`id`, `name`, `email`.
+
+---
+
+## 🧱 2. DTOs
+
+### `TeacherRequestDTO.java`
+
+```java
+package com.vidyasagar.attendance.dto;
+
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+
+public class TeacherRequestDTO {
+
+    @NotBlank(message = "Name is required")
+    private String name;
+
+    @Email(message = "Valid email is required")
+    private String email;
+
+    // Getters & Setters
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+}
+```
+
+### `TeacherResponseDTO.java`
+
+```java
+package com.vidyasagar.attendance.dto;
+
+import java.util.List;
+
+public class TeacherResponseDTO {
+
+    private Long id;
+    private String name;
+    private String email;
+    private List<String> courses; // only course titles for simplicity
+
+    // Getters & Setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+
+    public List<String> getCourses() { return courses; }
+    public void setCourses(List<String> courses) { this.courses = courses; }
+}
+```
+
+---
+
+## ⚙️ 3. Mapper (MapStruct)
+
+### `TeacherMapper.java`
+
+```java
+package com.vidyasagar.attendance.mapper;
+
+import com.vidyasagar.attendance.dto.TeacherRequestDTO;
+import com.vidyasagar.attendance.dto.TeacherResponseDTO;
+import com.vidyasagar.attendance.entity.Teacher;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.factory.Mappers;
+
+import java.util.stream.Collectors;
+
+@Mapper(componentModel = "spring")
+public interface TeacherMapper {
+
+    TeacherMapper INSTANCE = Mappers.getMapper(TeacherMapper.class);
+
+    Teacher toEntity(TeacherRequestDTO dto);
+
+    @Mapping(target = "courses", expression = "java(teacher.getCourses() != null ? teacher.getCourses().stream().map(c -> c.getTitle()).collect(Collectors.toList()) : null)")
+    TeacherResponseDTO toDTO(Teacher teacher);
+}
+```
+
+---
+
+## 🧠 4. Repository Layer
+
+### `TeacherRepository.java`
+
+```java
+package com.vidyasagar.attendance.repository;
+
+import com.vidyasagar.attendance.entity.Teacher;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public interface TeacherRepository extends JpaRepository<Teacher, Long> {
+}
+```
+
+---
+
+## 💼 5. Service Layer
+
+### `TeacherService.java`
+
+```java
+package com.vidyasagar.attendance.service;
+
+import com.vidyasagar.attendance.dto.TeacherRequestDTO;
+import com.vidyasagar.attendance.dto.TeacherResponseDTO;
+import com.vidyasagar.attendance.entity.Teacher;
+import com.vidyasagar.attendance.mapper.TeacherMapper;
+import com.vidyasagar.attendance.repository.TeacherRepository;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+public class TeacherService {
+
+    private final TeacherRepository teacherRepository;
+    private final TeacherMapper teacherMapper;
+
+    public TeacherService(TeacherRepository teacherRepository, TeacherMapper teacherMapper) {
+        this.teacherRepository = teacherRepository;
+        this.teacherMapper = teacherMapper;
+    }
+
+    public List<TeacherResponseDTO> getAllTeachers() {
+        return teacherRepository.findAll()
+                .stream()
+                .map(teacherMapper::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    public TeacherResponseDTO getTeacherById(Long id) {
+        return teacherRepository.findById(id)
+                .map(teacherMapper::toDTO)
+                .orElseThrow(() -> new RuntimeException("Teacher not found with id " + id));
+    }
+
+    public TeacherResponseDTO createTeacher(TeacherRequestDTO dto) {
+        Teacher teacher = teacherMapper.toEntity(dto);
+        return teacherMapper.toDTO(teacherRepository.save(teacher));
+    }
+
+    public TeacherResponseDTO updateTeacher(Long id, TeacherRequestDTO dto) {
+        Teacher existing = teacherRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Teacher not found with id " + id));
+        existing.setName(dto.getName());
+        existing.setEmail(dto.getEmail());
+        return teacherMapper.toDTO(teacherRepository.save(existing));
+    }
+
+    public void deleteTeacher(Long id) {
+        teacherRepository.deleteById(id);
+    }
+}
+```
+
+---
+
+## 🌐 6. Controller Layer
+
+### `TeacherController.java`
+
+```java
+package com.vidyasagar.attendance.controller;
+
+import com.vidyasagar.attendance.dto.TeacherRequestDTO;
+import com.vidyasagar.attendance.dto.TeacherResponseDTO;
+import com.vidyasagar.attendance.service.TeacherService;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/v1/teachers")
+public class TeacherController {
+
+    private final TeacherService teacherService;
+
+    public TeacherController(TeacherService teacherService) {
+        this.teacherService = teacherService;
+    }
+
+    @GetMapping
+    public List<TeacherResponseDTO> getAllTeachers() {
+        return teacherService.getAllTeachers();
+    }
+
+    @GetMapping("/{id}")
+    public TeacherResponseDTO getTeacherById(@PathVariable Long id) {
+        return teacherService.getTeacherById(id);
+    }
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public TeacherResponseDTO createTeacher(@RequestBody TeacherRequestDTO dto) {
+        return teacherService.createTeacher(dto);
+    }
+
+    @PutMapping("/{id}")
+    public TeacherResponseDTO updateTeacher(@PathVariable Long id, @RequestBody TeacherRequestDTO dto) {
+        return teacherService.updateTeacher(id, dto);
+    }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteTeacher(@PathVariable Long id) {
+        teacherService.deleteTeacher(id);
+    }
+}
+```
+
+---
+
+## 🧪 7. Database Table Creation
+
+Since you’re using Spring Data JPA, ensure your `application.properties` has:
+
+```properties
+spring.jpa.hibernate.ddl-auto=update
+```
+
+✅ This will automatically create the `teachers` table and add `teacher_id` foreign key to the `course` table.
+
+---
+
+## 🧭 8. Swagger API Docs Verification
+
+After running your app, visit:
+
+* **Swagger UI:** [http://localhost:8080/swagger-ui/index.html](http://localhost:8080/swagger-ui/index.html)
+* **OpenAPI JSON:** [http://localhost:8080/v3/api-docs](http://localhost:8080/v3/api-docs)
+
+You’ll see your new endpoints:
+
+| Method | Endpoint                | Description              |
+| ------ | ----------------------- | ------------------------ |
+| GET    | `/api/v1/teachers`      | List all teachers        |
+| GET    | `/api/v1/teachers/{id}` | Fetch a specific teacher |
+| POST   | `/api/v1/teachers`      | Create new teacher       |
+| PUT    | `/api/v1/teachers/{id}` | Update teacher details   |
+| DELETE | `/api/v1/teachers/{id}` | Delete a teacher         |
+
+---
+
+## 📸 Swagger Screenshot Summary (for README.md)
+
+In your documentation, you can describe this as:
+
+> **Teacher API Endpoints**
+> The Swagger UI provides an interactive view of Teacher APIs:
+>
+> * `GET /api/v1/teachers` — Retrieve all teachers
+> * `POST /api/v1/teachers` — Create a new teacher
+> * `GET /api/v1/teachers/{id}` — Retrieve teacher by ID
+> * `PUT /api/v1/teachers/{id}` — Update teacher details
+> * `DELETE /api/v1/teachers/{id}` — Remove a teacher
+
+Example Screenshot caption:
+
+```
+📷 Swagger UI Screenshot: Teacher Endpoints visible with full CRUD support.
+```
+
+---
+
+Would you like me to generate the **README.md section** for this “Add Teacher Entity” feature (with Swagger screenshot placeholders and description in your project documentation format)?
