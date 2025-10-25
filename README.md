@@ -3252,3 +3252,256 @@ curl -u admin:admin123 http://localhost:8080/api/v1/teachers
 | Access `/api/v1/teachers` as `faculty`  | 403 Forbidden    |
 
 ---
+Perfect, Vidya 👏 — jumping to **Week 4 Day 26: Logging Setup** is a great call!
+
+This topic makes your project **production-ready** — by ensuring every CRUD operation, error, and business event is **logged cleanly** using **SLF4J + Logback**, the standard for Spring Boot.
+
+Let’s go step-by-step 👇
+
+---
+
+# 🧭 Week 4 Day 26 — Logging Setup
+
+## 🎯 **Objective**
+
+Add structured logging using **SLF4J + Logback** for your project.
+
+---
+
+## 🧩 1️⃣ Default Spring Boot Logging (Good News 🎉)
+
+Spring Boot already includes:
+
+* **SLF4J** (Simple Logging Facade for Java)
+* **Logback** (as the default logging implementation)
+
+That means ✅ **no extra dependency** needed unless you want to customize it.
+
+Your `pom.xml` already has it through:
+
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter</artifactId>
+</dependency>
+```
+
+So we can start using logging **immediately**.
+
+---
+
+## 🧱 2️⃣ Add Logging to Your Services
+
+Example: add logging to your `StudentServiceImpl.java`
+
+```java
+package com.vidyasagar.attendance.api.v1.service.impl;
+
+import com.vidyasagar.attendance.api.v1.dto.response.StudentDTO;
+import com.vidyasagar.attendance.entity.Student;
+import com.vidyasagar.attendance.exception.ResourceNotFoundException;
+import com.vidyasagar.attendance.api.v1.mapper.StudentMapper;
+import com.vidyasagar.attendance.api.v1.repository.StudentRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+@Service
+public class StudentServiceImpl {
+
+    private static final Logger log = LoggerFactory.getLogger(StudentServiceImpl.class);
+
+    private final StudentRepository studentRepository;
+    private final StudentMapper studentMapper;
+
+    public StudentServiceImpl(StudentRepository studentRepository, StudentMapper studentMapper) {
+        this.studentRepository = studentRepository;
+        this.studentMapper = studentMapper;
+    }
+
+    public StudentDTO saveStudent(StudentDTO studentDto) {
+        log.info("Saving new student: {}", studentDto.getName());
+        Student student = studentMapper.toEntity(studentDto);
+        Student savedStudent = studentRepository.save(student);
+        log.debug("Saved student entity: {}", savedStudent);
+        return studentMapper.toDTO(savedStudent);
+    }
+
+    public List<StudentDTO> getAllStudents() {
+        log.info("Fetching all students");
+        List<Student> students = studentRepository.findAll();
+        log.info("Total students found: {}", students.size());
+        return studentMapper.toDTOList(students);
+    }
+
+    public StudentDTO getStudentById(Long id) {
+        log.info("Fetching student by ID: {}", id);
+        Student student = studentRepository.findById(id)
+                .orElseThrow(() -> {
+                    log.error("Student not found with id {}", id);
+                    return new ResourceNotFoundException("Student not found with id " + id);
+                });
+        return studentMapper.toDTO(student);
+    }
+
+    public void deleteStudent(Long id) {
+        log.warn("Deleting student with ID: {}", id);
+        studentRepository.deleteById(id);
+    }
+}
+```
+
+---
+
+## 🧩 3️⃣ Logging Levels Explained
+
+| Level   | Purpose                     | Example Usage                  |
+| ------- | --------------------------- | ------------------------------ |
+| `TRACE` | Deep debugging info         | SQL statements, loops          |
+| `DEBUG` | Development debugging       | Data flow, intermediate states |
+| `INFO`  | Normal operations           | CRUD start/end messages        |
+| `WARN`  | Unexpected but non-breaking | Missing optional data          |
+| `ERROR` | Failures or exceptions      | Catch blocks, system errors    |
+
+---
+
+## 🧾 4️⃣ Configure Logging in `application.properties`
+
+Spring Boot uses Logback internally.
+You can control levels via properties easily:
+
+```properties
+# ===============================
+# LOGGING CONFIGURATION
+# ===============================
+
+# Root level
+logging.level.root=INFO
+
+# Package-level logging
+logging.level.com.vidyasagar.attendance=DEBUG
+
+# Show logs in console
+logging.pattern.console=%d{yyyy-MM-dd HH:mm:ss} - %5p [%t] --- %c{1}: %m%n
+
+# Log file location
+logging.file.name=logs/attendance-app.log
+
+# Maximum file size and rotation (optional)
+logging.logback.rollingpolicy.max-file-size=10MB
+logging.logback.rollingpolicy.max-history=7
+```
+
+---
+
+## 🧱 5️⃣ Optional — Advanced Customization via `logback-spring.xml`
+
+Create this file inside:
+`src/main/resources/logback-spring.xml`
+
+Example:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration scan="true">
+
+    <property name="LOG_PATH" value="logs" />
+    <property name="APP_NAME" value="attendance-api" />
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} %-5level [%thread] %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/${APP_NAME}.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/${APP_NAME}-%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>10</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Set package log level -->
+    <logger name="com.vidyasagar.attendance" level="DEBUG" additivity="false">
+        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="FILE" />
+    </logger>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="FILE" />
+    </root>
+
+</configuration>
+```
+
+---
+
+## 🧪 6️⃣ Testing the Logs
+
+Run your Spring Boot app and perform CRUD actions (via Swagger or Postman).
+
+**Console Output Example:**
+
+```
+2025-10-25 14:25:19 -  INFO [main] --- StudentServiceImpl: Fetching all students
+2025-10-25 14:25:19 - DEBUG [main] --- StudentServiceImpl: Total students found: 3
+2025-10-25 14:25:24 -  WARN [main] --- StudentServiceImpl: Deleting student with ID: 5
+2025-10-25 14:25:24 - ERROR [main] --- StudentServiceImpl: Student not found with id 5
+```
+
+**Log File Output (`logs/attendance-app.log`):**
+
+```
+2025-10-25 14:25:19 INFO  com.vidyasagar.attendance.StudentServiceImpl - Fetching all students
+2025-10-25 14:25:24 WARN  com.vidyasagar.attendance.StudentServiceImpl - Deleting student with ID: 5
+```
+
+---
+
+## 🧩 7️⃣ Logging in Controllers Too
+
+You can use the same logger in your `StudentController.java` or `TeacherController.java`:
+
+```java
+private static final Logger log = LoggerFactory.getLogger(StudentController.class);
+
+@GetMapping("/{id}")
+public ResponseEntity<StudentDTO> getStudentById(@PathVariable Long id) {
+    log.info("Received request to fetch student by id: {}", id);
+    StudentDTO student = studentService.getStudentById(id);
+    log.info("Returning student: {}", student.getName());
+    return ResponseEntity.ok(student);
+}
+```
+
+---
+
+## ✅ **Summary — Week 4 Day 26**
+
+| Task                          | Status |
+| ----------------------------- | ------ |
+| Add SLF4J Logging             | ✅      |
+| Log CRUD Operations           | ✅      |
+| Configure Logging Levels      | ✅      |
+| Add Logback Config (optional) | ✅      |
+| Write logs to file            | ✅      |
+
+---
+
+### 🔍 **Result**
+
+You’ll now have:
+
+* Colorful, timestamped logs in console
+* Rolling log files in `/logs` directory
+* Fine-grained control over log levels
+* Consistent logging for all services & controllers
+
+---
