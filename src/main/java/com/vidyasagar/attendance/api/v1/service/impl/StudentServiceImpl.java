@@ -8,6 +8,8 @@ import com.vidyasagar.attendance.api.v1.dto.response.StudentDTO;
 import com.vidyasagar.attendance.exception.ResourceNotFoundException;
 import com.vidyasagar.attendance.api.v1.mapper.StudentMapper;
 import com.vidyasagar.attendance.api.v1.repository.StudentRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
 //import org.springframework.data.domain.PageRequest;
@@ -26,6 +28,8 @@ import java.util.List;
  */
 @Service
 public class StudentServiceImpl implements StudentService {
+    private static final Logger log = LoggerFactory.getLogger(StudentServiceImpl.class);
+
     private final StudentRepository studentRepository;
     private final StudentMapper studentMapper;
 
@@ -53,8 +57,10 @@ public class StudentServiceImpl implements StudentService {
      */
     @Override
     public StudentDTO saveStudent(StudentDTO studentDto) {
+        log.info("Saving new student: {}", studentDto.getName());
         Student student = studentMapper.toEntity(studentDto);
         Student saveStudent = studentRepository.save(student);
+        log.debug("Save student entity: {}", saveStudent);
         return studentMapper.toDTO(saveStudent);
     }
 
@@ -106,6 +112,7 @@ public class StudentServiceImpl implements StudentService {
      */
     @Override
     public StudentDTO updateStudent(Long id, StudentDTO studentDetails) {
+        log.info("Student id and details: {}, {}", id, studentDetails);
         // Find existing student
         Student student = studentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Student not found with id " + id));
@@ -129,6 +136,7 @@ public class StudentServiceImpl implements StudentService {
      */
     @Override
     public void deleteStudent(Long id) {
+        log.warn("Deleting student with ID: {}", id);
         // Find existing student
         Student student = studentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Student not found with id " + id));
